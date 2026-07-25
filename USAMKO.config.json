@@ -1,0 +1,63 @@
+{
+  "_comment": "USAMKO Platform Configuration - extends the existing app settings",
+  "_note": "The existing .exe.config is required by the compiled binary and cannot be renamed. This file provides USAMKO-specific configuration that the AI layer and new modules use.",
+
+  "branding": {
+    "name": "USAMKO",
+    "version": "1.0.0",
+    "owner": "Platform Owner"
+  },
+
+  "ai": {
+    "enabled": true,
+    "defaultProvider": "openai",
+    "providers": {
+      "openai": {
+        "enabled": true,
+        "apiKey": "",
+        "model": "gpt-4o",
+        "maxTokens": 4096,
+        "temperature": 0.7
+      },
+      "claude": {
+        "enabled": true,
+        "apiKey": "",
+        "model": "claude-sonnet-4-20250514",
+        "maxTokens": 4096,
+        "temperature": 0.7
+      },
+      "local": {
+        "enabled": false,
+        "endpoint": "http://localhost:11434",
+        "model": "llama3"
+      }
+    },
+    "features": {
+      "contentGeneration": true,
+      "hashtagSuggestion": true,
+      "sentimentAnalysis": true,
+      "translation": true,
+      "imageGeneration": true,
+      "captionImprovement": true,
+      "optimalTimeSuggestion": true
+    }
+  },
+
+  "aiService": {
+    "host": "http://localhost:5100",
+    "autoStart": true,
+    "endpoints": {
+      "generate": "/api/ai/generate",
+      "image": "/api/ai/image",
+      "hashtags": "/api/ai/hashtags",
+      "sentiment": "/api/ai/sentiment",
+      "translate": "/api/ai/translate",
+      "improve": "/api/ai/improve"
+    }
+  },
+
+  "security": {
+    "encryptionKey": "",
+    "vaultPath": "./data/vault.encrypted"
+  }
+}

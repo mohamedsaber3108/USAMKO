@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Authors>USAMKO Platform</Authors>
+    <Company>USAMKO</Company>
+    <Product>USAMKO Platform</Product>
+    <Description>Core domain models, business logic, and interfaces for USAMKO platform</Description>
+    <Copyright>Copyright © 2026 USAMKO Platform. All rights reserved.</Copyright>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" Version="12.4.0" />
+    <PackageReference Include="FluentValidation" Version="11.9.2" />
+    <PackageReference Include="Ardalis.GuardClauses" Version="4.6.0" />
+    <PackageReference Include="Ardalis.Specification" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>

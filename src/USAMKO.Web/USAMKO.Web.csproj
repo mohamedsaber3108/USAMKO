@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>USAMKO.Web</RootNamespace>
+    <Authors>USAMKO Platform</Authors>
+    <Company>USAMKO</Company>
+    <Description>USAMKO Web API and Admin Panel</Description>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\USAMKO.Core\USAMKO.Core.csproj" />
+    <ProjectReference Include="..\USAMKO.Infrastructure\USAMKO.Infrastructure.csproj" />
+    <ProjectReference Include="..\USAMKO.AI\USAMKO.AI.csproj" />
+    <ProjectReference Include="..\USAMKO.Platforms\USAMKO.Platforms.csproj" />
+    <ProjectReference Include="..\USAMKO.Automation\USAMKO.Automation.csproj" />
+    <ProjectReference Include="..\USAMKO.Plugins\USAMKO.Plugins.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.7.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.2" />
+  </ItemGroup>
+
+</Project>
