@@ -1,0 +1,143 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum Role {
+  ADMIN
+  USER
+  VIEWER
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  CANCELED
+}
+
+enum WorkflowStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum ExecutionStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELED
+}
+
+enum SocialPlatform {
+  FACEBOOK
+  INSTAGRAM
+  LINKEDIN
+  TWITTER
+  WHATSAPP
+  TIKTOK
+  YOUTUBE
+  TELEGRAM
+  PINTEREST
+  REDDIT
+}
+
+enum AccountStatus {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+  EXPIRED
+}
+
+// Models
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  role      Role     @default(USER)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  platformAccounts PlatformAccount[]
+  workflows        Workflow[]
+  @@unique([tenantId, email])
+}
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  status    TenantStatus @default(ACTIVE)
+  users     User[]
+  workflows Workflow[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PlatformAccount {
+  id           String       @id @default(uuid())
+  tenantId     String
+  userId       String
+  platform     SocialPlatform
+  accountName  String
+  accountId    String
+  accessToken  String?
+  refreshToken String?
+  expiresAt    DateTime?
+  status       AccountStatus @default(DISCONNECTED)
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenantId     String
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model Workflow {
+  id          String   @id @default(uuid())
+  tenantId    String
+  userId      String
+  name        String
+  description String?
+  status      WorkflowStatus @default(DRAFT)
+  definition  Json     // { nodes: [...], edges: [...] }
+  version     Int      @default(1)
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  executions  WorkflowExecution[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model WorkflowExecution {
+  id          String       @id @default(uuid())
+  workflowId  String
+  workflow    Workflow     @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  status      ExecutionStatus @default(RUNNING)
+  input       Json?
+  output      Json?
+  error       String?
+  startedAt   DateTime     @default(now())
+  completedAt DateTime?
+}
+
+model WorkflowSchedule {
+  id             String   @id @default(uuid())
+  workflowId     String
+  workflow       Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  cronExpression String
+  enabled        Boolean  @default(true)
+  nextRunAt      DateTime
+  lastRunAt      DateTime?
+  createdAt      DateTime @default(now())
+}

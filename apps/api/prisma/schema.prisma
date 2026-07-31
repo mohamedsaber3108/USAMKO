@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  status    String   @default("active")
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users            User[]
+  workflows        Workflow[]
+  platformAccounts PlatformAccount[]
+  campaigns        Campaign[]
+
+  @@map("tenants")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String
+  password  String
+  name      String
+  role      String   @default("user")
+  tenantId  String
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workflows Workflow[]
+  campaigns Campaign[]
+
+  @@unique([tenantId, email])
+  @@map("users")
+}
+
+model Workflow {
+  id          String   @id @default(uuid())
+  tenantId    String
+  userId      String
+  name        String
+  description String?
+  status      String   @default("draft")
+  definition  Json
+  version     Int      @default(1)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant     Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  executions WorkflowExecution[]
+
+  @@map("workflows")
+}
+
+model WorkflowExecution {
+  id          String    @id @default(uuid())
+  workflowId  String
+  status      String    @default("running")
+  input       Json?
+  output      Json?
+  error       String?
+  metadata    Json?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  workflow Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@map("workflow_executions")
+}
+
+model PlatformAccount {
+  id           String   @id @default(uuid())
+  tenantId     String
+  platform     String
+  username     String
+  displayName  String?
+  profileUrl   String?
+  accessToken  String?
+  refreshToken String?
+  cookies      Json?
+  metadata     Json?
+  status       String   @default("active")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  campaigns Campaign[]
+
+  @@unique([tenantId, platform, username])
+  @@map("platform_accounts")
+}
+
+model Campaign {
+  id          String    @id @default(uuid())
+  tenantId    String
+  userId      String
+  accountId   String
+  name        String
+  type        String
+  status      String    @default("draft")
+  config      Json
+  results     Json?
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant  Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account PlatformAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@map("campaigns")
+}
