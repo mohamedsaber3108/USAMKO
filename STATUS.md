@@ -113,9 +113,25 @@ From [PHASE1_IMPLEMENTATION_TICKETS.md](docs/PHASE1_IMPLEMENTATION_TICKETS.md):
 
 ### Overall Phase 1 Progress
 - **Total Tickets:** 41 tickets (218 story points)
-- **Completed:** 3 tickets (13 story points)
-- **In Progress:** Backend + Frontend fully functional
-- **Next:** Authentication implementation (Ticket 3.1)
+- **Completed:** 4 tickets (21 story points)
+- **In Progress:** Backend + Frontend fully functional, Authentication implemented
+- **Next:** Role-Based Access Control (Ticket 3.2)
+
+### Ticket 3.1 Completed ✅
+- **User Registration & Login** (8 points)
+  - ✅ `POST /auth/register` - Register new user
+  - ✅ `POST /auth/login` - Login user with JWT
+  - ✅ `POST /auth/logout` - Logout user
+  - ✅ `POST /auth/refresh` - Refresh access token
+  - ✅ Passwords hashed with bcrypt (10 rounds)
+  - ✅ JWT access token (15-minute expiry)
+  - ✅ Refresh token (7-day expiry)
+  - ✅ Email validation (valid format)
+  - ✅ Password validation (12 chars, 1 uppercase, 1 lowercase, 1 number)
+  - ✅ Auth guards and decorators
+  - ✅ Local strategy for login
+  - ✅ JWT strategy for protected routes
+  - ✅ Refresh token strategy
 
 ### Timeline
 - **Started:** July 26, 2026
@@ -223,18 +239,99 @@ docker-compose logs -f rabbitmq
 
 ---
 
-## 📝 Known Issues
+## �️ Database Schema Updates
 
-### 1. Prisma Migration Pending
-- **Issue:** PostgreSQL authentication challenge with Prisma
-- **Workaround:** Backend runs without database (no queries yet)
-- **Fix:** Investigating scram-sha-256 vs md5 authentication
-- **Impact:** Low (migrations will run once fixed)
+### User Model Updated
+- Added `password` field (String?) for authentication
+- Name field is now required (String)
 
-### 2. Line Ending Warnings
-- **Issue:** Git warns about LF → CRLF conversion
-- **Impact:** None (cosmetic only)
-- **Fix:** Already handled by Git automatically
+---
+
+## 🚀 Authentication API Endpoints
+
+### Register User
+```bash
+curl -X POST http://localhost:3000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "SecurePass123!",
+    "name": "John Doe"
+  }'
+```
+
+**Response:**
+```json
+{
+  "user": {
+    "id": "uuid",
+    "email": "user@example.com",
+    "name": "John Doe",
+    "role": "USER",
+    "createdAt": "2026-07-31T..."
+  },
+  "accessToken": "eyJhbGc...",
+  "refreshToken": "rt_abc123..."
+}
+```
+
+### Login User
+```bash
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "SecurePass123!"
+  }'
+```
+
+**Response:**
+```json
+{
+  "user": {
+    "id": "uuid",
+    "email": "user@example.com",
+    "name": "John Doe",
+    "role": "USER"
+  },
+  "accessToken": "eyJhbGc...",
+  "refreshToken": "rt_abc123..."
+}
+```
+
+### Refresh Token
+```bash
+curl -X POST http://localhost:3000/auth/refresh \
+  -H "Authorization: Bearer <refresh_token>"
+```
+
+### Logout
+```bash
+curl -X POST http://localhost:3000/auth/logout \
+  -H "Content-Type: application/json" \
+  -d '{"refreshToken": "<refresh_token>"}'
+```
+
+---
+
+## ⏭️ Next Steps
+
+### Immediate (This Week)
+1. **Run Database Migrations**
+   - Fix Prisma connection issue
+   - Run: `pnpm prisma migrate dev --name add_password_to_user`
+   - Verify database tables created
+
+2. **Create Login/Register UI**
+   - Login page (`/login`)
+   - Registration page (`/register`)
+   - Protected routes
+   - JWT storage in httpOnly cookie
+
+### Next Sprint (Week 2)
+3. **Ticket 3.2: Role-Based Access Control** (5 points)
+4. **Ticket 2.1: Implement Tenant Isolation** (8 points)
+5. **Ticket 4.1: Core Workflow Engine** (13 points)
 
 ---
 
