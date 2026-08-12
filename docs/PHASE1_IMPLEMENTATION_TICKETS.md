@@ -10,6 +10,7 @@
 ## Epic 1: Project Setup & Infrastructure (Week 1-2)
 
 ### Ticket 1.1: Initialize Project Structure
+
 **Type:** Task  
 **Priority:** Critical  
 **Assignee:** DevOps Engineer  
@@ -20,6 +21,7 @@
 Set up monorepo with NestJS backend + Next.js frontend.
 
 **Acceptance Criteria:**
+
 - [ ] Turborepo or Nx monorepo configured
 - [ ] NestJS backend app initialized (`apps/api`)
 - [ ] Next.js frontend app initialized (`apps/web`)
@@ -30,6 +32,7 @@ Set up monorepo with NestJS backend + Next.js frontend.
 - [ ] `pnpm install` works without errors
 
 **Technical Notes:**
+
 ```bash
 # Project structure
 usamko/
@@ -45,6 +48,7 @@ usamko/
 ---
 
 ### Ticket 1.2: Set Up Development Environment
+
 **Type:** Task  
 **Priority:** Critical  
 **Assignee:** DevOps Engineer  
@@ -55,6 +59,7 @@ usamko/
 Docker Compose for local development (PostgreSQL, Redis, RabbitMQ).
 
 **Acceptance Criteria:**
+
 - [ ] `docker-compose.yml` created with services:
   - PostgreSQL 16
   - Redis 7
@@ -66,6 +71,7 @@ Docker Compose for local development (PostgreSQL, Redis, RabbitMQ).
 - [ ] Seed data script created (test users, workflows)
 
 **Technical Notes:**
+
 ```yaml
 # docker-compose.yml snippet
 services:
@@ -76,12 +82,13 @@ services:
       POSTGRES_PASSWORD: dev_password
       POSTGRES_DB: usamko_dev
     ports:
-      - "5432:5432"
+      - '5432:5432'
 ```
 
 ---
 
 ### Ticket 1.3: Set Up CI/CD Pipeline
+
 **Type:** Task  
 **Priority:** High  
 **Assignee:** DevOps Engineer  
@@ -92,6 +99,7 @@ services:
 GitHub Actions for automated testing and deployment.
 
 **Acceptance Criteria:**
+
 - [ ] `.github/workflows/ci.yml` created
 - [ ] Pipeline runs on every PR:
   - Lint (ESLint)
@@ -105,6 +113,7 @@ GitHub Actions for automated testing and deployment.
 ---
 
 ### Ticket 1.4: Set Up Database with Prisma
+
 **Type:** Task  
 **Priority:** Critical  
 **Assignee:** Backend Engineer  
@@ -115,6 +124,7 @@ GitHub Actions for automated testing and deployment.
 Configure Prisma ORM with initial schema.
 
 **Acceptance Criteria:**
+
 - [ ] Prisma installed and configured
 - [ ] Initial schema defined (`schema.prisma`):
   - User model
@@ -126,6 +136,7 @@ Configure Prisma ORM with initial schema.
 - [ ] `npx prisma migrate dev` works
 
 **Technical Notes:**
+
 ```prisma
 // schema.prisma
 model User {
@@ -143,6 +154,7 @@ model User {
 ## Epic 2: Core Platform (Week 3-4)
 
 ### Ticket 2.1: Configuration Management
+
 **Type:** Feature  
 **Priority:** Critical  
 **Assignee:** Backend Engineer  
@@ -153,6 +165,7 @@ model User {
 Implement configuration service with environment variables + validation.
 
 **Acceptance Criteria:**
+
 - [ ] `ConfigModule` created (NestJS)
 - [ ] Load config from `.env` files
 - [ ] Zod schema validation for all config
@@ -161,6 +174,7 @@ Implement configuration service with environment variables + validation.
 - [ ] Test coverage > 80%
 
 **Code Example:**
+
 ```typescript
 const ConfigSchema = z.object({
   database: z.object({
@@ -177,6 +191,7 @@ const ConfigSchema = z.object({
 ---
 
 ### Ticket 2.2: Health Check Endpoints
+
 **Type:** Feature  
 **Priority:** High  
 **Assignee:** Backend Engineer  
@@ -187,6 +202,7 @@ const ConfigSchema = z.object({
 Add health check endpoints for Kubernetes probes.
 
 **Acceptance Criteria:**
+
 - [ ] `GET /health/liveness` returns 200 (is app alive?)
 - [ ] `GET /health/readiness` returns 200 (is app ready for traffic?)
 - [ ] Readiness checks dependencies:
@@ -197,6 +213,7 @@ Add health check endpoints for Kubernetes probes.
 - [ ] Returns 503 if any dependency unhealthy
 
 **API Response:**
+
 ```json
 {
   "status": "healthy",
@@ -212,6 +229,7 @@ Add health check endpoints for Kubernetes probes.
 ---
 
 ### Ticket 2.3: Event Bus (In-Process)
+
 **Type:** Feature  
 **Priority:** Medium  
 **Assignee:** Backend Engineer  
@@ -222,6 +240,7 @@ Add health check endpoints for Kubernetes probes.
 Implement in-process event bus for module communication.
 
 **Acceptance Criteria:**
+
 - [ ] `EventBusService` created
 - [ ] `emit(event, data)` method
 - [ ] `on(event, handler)` method (subscribe)
@@ -229,12 +248,13 @@ Implement in-process event bus for module communication.
 - [ ] Test coverage > 80%
 
 **Code Example:**
+
 ```typescript
 // Emit event
 eventBus.emit('user.registered', { userId: '123', email: 'user@example.com' });
 
 // Subscribe
-eventBus.on('user.registered', async (data) => {
+eventBus.on('user.registered', async data => {
   console.log(`Welcome ${data.email}!`);
 });
 ```
@@ -242,6 +262,7 @@ eventBus.on('user.registered', async (data) => {
 ---
 
 ### Ticket 2.4: Rate Limiting Middleware
+
 **Type:** Feature  
 **Priority:** High  
 **Assignee:** Backend Engineer  
@@ -252,6 +273,7 @@ eventBus.on('user.registered', async (data) => {
 Redis-based rate limiting per user/IP.
 
 **Acceptance Criteria:**
+
 - [ ] `RateLimitGuard` created (NestJS guard)
 - [ ] Token bucket algorithm implemented
 - [ ] Configurable limits (per endpoint, per tier)
@@ -260,6 +282,7 @@ Redis-based rate limiting per user/IP.
 - [ ] Test coverage > 80%
 
 **Rate Limits:**
+
 - Free tier: 100 requests/hour
 - Pro tier: 1000 requests/hour
 - Enterprise: Custom
@@ -267,6 +290,7 @@ Redis-based rate limiting per user/IP.
 ---
 
 ### Ticket 2.5: Caching Service
+
 **Type:** Feature  
 **Priority:** Medium  
 **Assignee:** Backend Engineer  
@@ -277,6 +301,7 @@ Redis-based rate limiting per user/IP.
 Multi-level caching (L1 in-memory, L2 Redis).
 
 **Acceptance Criteria:**
+
 - [ ] `CacheService` created
 - [ ] `get<T>(key)`, `set<T>(key, value, ttl)` methods
 - [ ] L1 cache (in-memory Map, 1-minute TTL)
@@ -287,6 +312,7 @@ Multi-level caching (L1 in-memory, L2 Redis).
 - [ ] Test coverage > 80%
 
 **Code Example:**
+
 ```typescript
 @Cacheable({ ttl: 300, tags: ['user'] })
 async getUserById(id: string): Promise<User> {
@@ -299,6 +325,7 @@ async getUserById(id: string): Promise<User> {
 ## Epic 3: Identity & Security (Week 5-6)
 
 ### Ticket 3.1: User Registration & Login
+
 **Type:** Feature  
 **Priority:** Critical  
 **Assignee:** Backend Engineer  
@@ -309,6 +336,7 @@ async getUserById(id: string): Promise<User> {
 Email/password authentication with JWT tokens.
 
 **Acceptance Criteria:**
+
 - [ ] `POST /auth/register` - Register new user
 - [ ] `POST /auth/login` - Login user
 - [ ] `POST /auth/logout` - Logout user
@@ -321,6 +349,7 @@ Email/password authentication with JWT tokens.
 - [ ] Test coverage > 80%
 
 **API Example:**
+
 ```bash
 POST /auth/register
 {
@@ -340,6 +369,7 @@ Response:
 ---
 
 ### Ticket 3.2: OAuth Integration (Google, GitHub)
+
 **Type:** Feature  
 **Priority:** High  
 **Assignee:** Backend Engineer  
@@ -350,6 +380,7 @@ Response:
 OAuth 2.0 login with Google and GitHub.
 
 **Acceptance Criteria:**
+
 - [ ] `GET /auth/google` - Redirect to Google OAuth
 - [ ] `GET /auth/google/callback` - Handle callback
 - [ ] `GET /auth/github` - Redirect to GitHub OAuth
@@ -362,6 +393,7 @@ OAuth 2.0 login with Google and GitHub.
 ---
 
 ### Ticket 3.3: Multi-Tenancy Setup
+
 **Type:** Feature  
 **Priority:** Critical  
 **Assignee:** Backend Engineer  
@@ -372,6 +404,7 @@ OAuth 2.0 login with Google and GitHub.
 Multi-tenant isolation with `tenant_id` column + RLS.
 
 **Acceptance Criteria:**
+
 - [ ] `Tenant` model created (Prisma)
 - [ ] All models have `tenantId` foreign key
 - [ ] Middleware extracts tenant from subdomain or custom domain
@@ -381,6 +414,7 @@ Multi-tenant isolation with `tenant_id` column + RLS.
 - [ ] Test: Admin can access all tenants
 
 **Prisma Schema:**
+
 ```prisma
 model Tenant {
   id        String   @id @default(uuid())
@@ -403,6 +437,7 @@ model User {
 ---
 
 ### Ticket 3.4: RBAC (Role-Based Access Control)
+
 **Type:** Feature  
 **Priority:** High  
 **Assignee:** Backend Engineer  
@@ -413,6 +448,7 @@ model User {
 Implement roles and permissions (Admin, User, Viewer).
 
 **Acceptance Criteria:**
+
 - [ ] `Role` enum: `ADMIN`, `USER`, `VIEWER`
 - [ ] User model has `role` field
 - [ ] `@RequirePermission()` decorator
@@ -424,6 +460,7 @@ Implement roles and permissions (Admin, User, Viewer).
 - [ ] Test coverage > 80%
 
 **Code Example:**
+
 ```typescript
 @Post('/workflows')
 @RequirePermission('workflow:create')
@@ -437,6 +474,7 @@ async createWorkflow(@Body() dto: CreateWorkflowDto) {
 ## Epic 4: Browser Platform (Week 7-8)
 
 ### Ticket 4.1: Playwright Integration
+
 **Type:** Feature  
 **Priority:** Critical  
 **Assignee:** Backend Engineer  
@@ -447,6 +485,7 @@ async createWorkflow(@Body() dto: CreateWorkflowDto) {
 Initialize Playwright for browser automation.
 
 **Acceptance Criteria:**
+
 - [ ] Playwright installed (`@playwright/test`)
 - [ ] `BrowserService` created
 - [ ] `launchBrowser()` method (returns Browser instance)
@@ -459,6 +498,7 @@ Initialize Playwright for browser automation.
 ---
 
 ### Ticket 4.2: Browser Profile Management
+
 **Type:** Feature  
 **Priority:** High  
 **Assignee:** Backend Engineer  
@@ -469,6 +509,7 @@ Initialize Playwright for browser automation.
 Persistent browser profiles (cookies, localStorage, sessions).
 
 **Acceptance Criteria:**
+
 - [ ] `BrowserProfile` model created (Prisma)
 - [ ] `createProfile(userId, platform)` method
 - [ ] `loadProfile(profileId)` method - Launch browser with profile
@@ -478,6 +519,7 @@ Persistent browser profiles (cookies, localStorage, sessions).
 - [ ] Test: Create profile, save cookies, load profile, cookies persist
 
 **Schema:**
+
 ```prisma
 model BrowserProfile {
   id            String   @id @default(uuid())
@@ -496,6 +538,7 @@ model BrowserProfile {
 ## Epic 5: Automation Engine (Week 9-12)
 
 ### Ticket 5.1: Workflow Schema Definition
+
 **Type:** Task  
 **Priority:** Critical  
 **Assignee:** Backend Engineer  
@@ -506,6 +549,7 @@ model BrowserProfile {
 Define Workflow and WorkflowExecution models.
 
 **Acceptance Criteria:**
+
 - [ ] `Workflow` model created (Prisma)
 - [ ] `WorkflowExecution` model created
 - [ ] Workflow has: name, description, definition (JSON), status, version
@@ -514,6 +558,7 @@ Define Workflow and WorkflowExecution models.
 - [ ] Execution has: workflowId, status, input, output, startedAt, completedAt
 
 **Prisma Schema:**
+
 ```prisma
 model Workflow {
   id          String   @id @default(uuid())
@@ -539,6 +584,7 @@ model WorkflowExecution {
 ---
 
 ### Ticket 5.2: Workflow Engine (Basic Execution)
+
 **Type:** Feature  
 **Priority:** Critical  
 **Assignee:** Backend Engineer  
@@ -549,6 +595,7 @@ model WorkflowExecution {
 Execute workflows with simple node types (action, delay).
 
 **Acceptance Criteria:**
+
 - [ ] `WorkflowEngineService` created
 - [ ] `execute(workflowId, input?)` method
 - [ ] Execute nodes in topological order (resolve dependencies)
@@ -560,6 +607,7 @@ Execute workflows with simple node types (action, delay).
 - [ ] Test: Create workflow with 3 steps, execute, verify results
 
 **Execution Flow:**
+
 ```typescript
 // Workflow definition
 {
@@ -581,6 +629,7 @@ await workflowEngine.execute(workflow.id);
 ---
 
 ### Ticket 5.3: Workflow Scheduler (Cron)
+
 **Type:** Feature  
 **Priority:** High  
 **Assignee:** Backend Engineer  
@@ -591,6 +640,7 @@ await workflowEngine.execute(workflow.id);
 Schedule workflows to run at specific times (cron expressions).
 
 **Acceptance Criteria:**
+
 - [ ] `WorkflowSchedule` model created (Prisma)
 - [ ] `createSchedule(workflowId, cronExpression)` method
 - [ ] Background job runs every minute (checks schedules)
@@ -600,6 +650,7 @@ Schedule workflows to run at specific times (cron expressions).
 - [ ] Test: Schedule workflow for 1 minute from now, verify it executes
 
 **Schema:**
+
 ```prisma
 model WorkflowSchedule {
   id             String   @id @default(uuid())
@@ -615,6 +666,7 @@ model WorkflowSchedule {
 ---
 
 ### Ticket 5.4: Visual Workflow Builder (Frontend)
+
 **Type:** Feature  
 **Priority:** High  
 **Assignee:** Frontend Engineer  
@@ -625,6 +677,7 @@ model WorkflowSchedule {
 Drag-and-drop workflow builder using React Flow.
 
 **Acceptance Criteria:**
+
 - [ ] Install React Flow library
 - [ ] Workflow canvas with zoom/pan
 - [ ] Node palette (sidebar with draggable nodes)
@@ -636,6 +689,7 @@ Drag-and-drop workflow builder using React Flow.
 - [ ] Test: Create workflow with 5 nodes, save, reload, verify nodes/edges persist
 
 **UI Mockup:**
+
 ```
 ┌─────────────────────────────────────────────────┐
 │ [Node Palette]  │  [Canvas]        │ [Config]  │
@@ -656,6 +710,7 @@ Drag-and-drop workflow builder using React Flow.
 ## Epic 6: Social Platform Adapters (Week 13-16)
 
 ### Ticket 6.1: Facebook Adapter - Post Feature
+
 **Type:** Feature  
 **Priority:** Critical  
 **Assignee:** Backend Engineer  
@@ -666,6 +721,7 @@ Drag-and-drop workflow builder using React Flow.
 Implement Facebook post creation via Graph API.
 
 **Acceptance Criteria:**
+
 - [ ] `FacebookAdapter` class created
 - [ ] `FacebookPostFeature` implements `IPostFeature`
 - [ ] `create(content, options)` method - Create Facebook post
@@ -678,6 +734,7 @@ Implement Facebook post creation via Graph API.
 - [ ] Test with real Facebook account
 
 **API Integration:**
+
 ```typescript
 // Facebook Graph API
 POST /v18.0/{page-id}/feed
@@ -691,6 +748,7 @@ POST /v18.0/{page-id}/feed
 ---
 
 ### Ticket 6.2: Instagram Adapter - Post Feature
+
 **Type:** Feature  
 **Priority:** Critical  
 **Assignee:** Backend Engineer  
@@ -701,6 +759,7 @@ POST /v18.0/{page-id}/feed
 Implement Instagram post creation via Graph API.
 
 **Acceptance Criteria:**
+
 - [ ] `InstagramAdapter` class created
 - [ ] `InstagramPostFeature` implements `IPostFeature`
 - [ ] `create(content, options)` method - Create Instagram post
@@ -712,6 +771,7 @@ Implement Instagram post creation via Graph API.
 ---
 
 ### Ticket 6.3: LinkedIn Adapter - Post Feature
+
 **Type:** Feature  
 **Priority:** High  
 **Assignee:** Backend Engineer  
@@ -722,6 +782,7 @@ Implement Instagram post creation via Graph API.
 Implement LinkedIn post creation via Marketing API.
 
 **Acceptance Criteria:**
+
 - [ ] `LinkedInAdapter` class created
 - [ ] `LinkedInPostFeature` implements `IPostFeature`
 - [ ] `create(content, options)` method - Create LinkedIn post
@@ -732,6 +793,7 @@ Implement LinkedIn post creation via Marketing API.
 ---
 
 ### Ticket 6.4: Twitter Adapter - Tweet Feature
+
 **Type:** Feature  
 **Priority:** High  
 **Assignee:** Backend Engineer  
@@ -742,6 +804,7 @@ Implement LinkedIn post creation via Marketing API.
 Implement Twitter tweet creation via v2 API.
 
 **Acceptance Criteria:**
+
 - [ ] `TwitterAdapter` class created
 - [ ] `TwitterPostFeature` implements `IPostFeature`
 - [ ] `create(content, options)` method - Create tweet
@@ -753,6 +816,7 @@ Implement Twitter tweet creation via v2 API.
 ---
 
 ### Ticket 6.5: WhatsApp Business Adapter - Message Feature
+
 **Type:** Feature  
 **Priority:** Medium  
 **Assignee:** Backend Engineer  
@@ -763,6 +827,7 @@ Implement Twitter tweet creation via v2 API.
 Implement WhatsApp message sending via Business API.
 
 **Acceptance Criteria:**
+
 - [ ] `WhatsAppAdapter` class created
 - [ ] `WhatsAppMessageFeature` implements `IMessageFeature`
 - [ ] `send(recipientId, message)` method - Send message
@@ -776,6 +841,7 @@ Implement WhatsApp message sending via Business API.
 ## Epic 7: Frontend (Week 13-16)
 
 ### Ticket 7.1: Authentication UI (Login/Register)
+
 **Type:** Feature  
 **Priority:** Critical  
 **Assignee:** Frontend Engineer  
@@ -783,6 +849,7 @@ Implement WhatsApp message sending via Business API.
 **Dependencies:** 3.1, 3.2
 
 **Acceptance Criteria:**
+
 - [ ] Login page (`/login`)
 - [ ] Register page (`/register`)
 - [ ] Email/password form with validation
@@ -795,6 +862,7 @@ Implement WhatsApp message sending via Business API.
 ---
 
 ### Ticket 7.2: Dashboard (Main UI)
+
 **Type:** Feature  
 **Priority:** Critical  
 **Assignee:** Frontend Engineer  
@@ -802,6 +870,7 @@ Implement WhatsApp message sending via Business API.
 **Dependencies:** 7.1
 
 **Acceptance Criteria:**
+
 - [ ] Dashboard page (`/dashboard`)
 - [ ] Sidebar navigation (Workflows, Platforms, Analytics, Settings)
 - [ ] Top bar (user menu, notifications)
@@ -812,6 +881,7 @@ Implement WhatsApp message sending via Business API.
 ---
 
 ### Ticket 7.3: Platform Connections Page
+
 **Type:** Feature  
 **Priority:** High  
 **Assignee:** Frontend Engineer  
@@ -819,6 +889,7 @@ Implement WhatsApp message sending via Business API.
 **Dependencies:** 7.2, 6.1-6.5
 
 **Acceptance Criteria:**
+
 - [ ] Platforms page (`/platforms`)
 - [ ] List of available platforms (Facebook, Instagram, LinkedIn, Twitter, WhatsApp)
 - [ ] "Connect" button for each platform (triggers OAuth)
@@ -829,6 +900,7 @@ Implement WhatsApp message sending via Business API.
 ---
 
 ### Ticket 7.4: Workflows List Page
+
 **Type:** Feature  
 **Priority:** High  
 **Assignee:** Frontend Engineer  
@@ -836,6 +908,7 @@ Implement WhatsApp message sending via Business API.
 **Dependencies:** 7.2, 5.1
 
 **Acceptance Criteria:**
+
 - [ ] Workflows page (`/workflows`)
 - [ ] Table: Name, Status, Last Run, Actions
 - [ ] "Create Workflow" button (opens builder)
@@ -849,6 +922,7 @@ Implement WhatsApp message sending via Business API.
 ## Epic 8: Testing & QA (Week 15-16)
 
 ### Ticket 8.1: Unit Tests (Backend)
+
 **Type:** Task  
 **Priority:** High  
 **Assignee:** All Backend Engineers  
@@ -859,6 +933,7 @@ Implement WhatsApp message sending via Business API.
 Achieve 80%+ test coverage for backend services.
 
 **Acceptance Criteria:**
+
 - [ ] All services have unit tests (Vitest)
 - [ ] Test coverage > 80% (lines, branches)
 - [ ] Tests run in CI pipeline
@@ -868,6 +943,7 @@ Achieve 80%+ test coverage for backend services.
 ---
 
 ### Ticket 8.2: Integration Tests (API)
+
 **Type:** Task  
 **Priority:** High  
 **Assignee:** Backend Engineer  
@@ -878,6 +954,7 @@ Achieve 80%+ test coverage for backend services.
 End-to-end API tests with real database.
 
 **Acceptance Criteria:**
+
 - [ ] Test user registration → login → create workflow → execute
 - [ ] Test platform connection → post creation
 - [ ] Use test database (Docker Compose)
@@ -887,6 +964,7 @@ End-to-end API tests with real database.
 ---
 
 ### Ticket 8.3: E2E Tests (Frontend)
+
 **Type:** Task  
 **Priority:** Medium  
 **Assignee:** Frontend Engineer  
@@ -897,6 +975,7 @@ End-to-end API tests with real database.
 End-to-end tests with Playwright.
 
 **Acceptance Criteria:**
+
 - [ ] Test user registration flow
 - [ ] Test login flow
 - [ ] Test create workflow flow
@@ -907,6 +986,7 @@ End-to-end tests with Playwright.
 ---
 
 ### Ticket 8.4: Performance Testing
+
 **Type:** Task  
 **Priority:** Medium  
 **Assignee:** Backend Engineer  
@@ -917,6 +997,7 @@ End-to-end tests with Playwright.
 Load test with 100 concurrent users.
 
 **Acceptance Criteria:**
+
 - [ ] Use k6 or Artillery for load testing
 - [ ] Test scenarios:
   - 100 users creating workflows
@@ -930,6 +1011,7 @@ Load test with 100 concurrent users.
 ## Epic 9: Deployment (Week 16)
 
 ### Ticket 9.1: Production Environment Setup
+
 **Type:** Task  
 **Priority:** Critical  
 **Assignee:** DevOps Engineer  
@@ -940,6 +1022,7 @@ Load test with 100 concurrent users.
 Set up production infrastructure on AWS.
 
 **Acceptance Criteria:**
+
 - [ ] AWS account configured
 - [ ] VPC created (public + private subnets)
 - [ ] RDS PostgreSQL instance (production-grade)
@@ -954,6 +1037,7 @@ Set up production infrastructure on AWS.
 ---
 
 ### Ticket 9.2: Monitoring & Alerting
+
 **Type:** Task  
 **Priority:** High  
 **Assignee:** DevOps Engineer  
@@ -964,6 +1048,7 @@ Set up production infrastructure on AWS.
 Set up monitoring with Prometheus + Grafana.
 
 **Acceptance Criteria:**
+
 - [ ] Prometheus installed
 - [ ] Grafana dashboards:
   - API request rate
@@ -980,6 +1065,7 @@ Set up monitoring with Prometheus + Grafana.
 ---
 
 ### Ticket 9.3: Production Deployment
+
 **Type:** Task  
 **Priority:** Critical  
 **Assignee:** DevOps Engineer  
@@ -990,6 +1076,7 @@ Set up monitoring with Prometheus + Grafana.
 Deploy v2.0 MVP to production.
 
 **Acceptance Criteria:**
+
 - [ ] Docker images built and pushed to ECR
 - [ ] Database migrations run
 - [ ] Environment variables configured
@@ -1004,20 +1091,23 @@ Deploy v2.0 MVP to production.
 
 **Total Epics:** 9  
 **Total Tickets:** 41  
-**Total Story Points:** 218  
+**Total Story Points:** 218
 
 **By Priority:**
+
 - Critical: 16 tickets (MVP blockers)
 - High: 15 tickets (Important features)
 - Medium: 10 tickets (Nice to have)
 
 **By Type:**
+
 - Feature: 28 tickets
 - Task: 13 tickets
 
 **Estimated Timeline:** 16 weeks (4 months)
 
 **Success Criteria for Phase 1:**
+
 - ✅ All 41 tickets completed
 - ✅ 100 beta users onboarded
 - ✅ 1,000 workflows executed
@@ -1036,6 +1126,7 @@ Deploy v2.0 MVP to production.
 4. **Start Sprint 1** (Epics 1-2: Project Setup + Core Platform)
 
 **Recommended Sprint Plan:**
+
 - Sprint 1 (Week 1-2): Epics 1-2 (Setup + Core)
 - Sprint 2 (Week 3-4): Epic 3 (Identity)
 - Sprint 3 (Week 5-6): Epic 4 (Browser)

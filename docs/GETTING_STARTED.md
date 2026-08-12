@@ -49,6 +49,7 @@ Create a `secrets.json` file or use environment variables:
 ```
 
 **Generate secure keys:**
+
 ```bash
 # JWT Secret (64 characters)
 openssl rand -base64 64
@@ -86,11 +87,13 @@ dotnet ef database update
 ### 5. Run the Application
 
 **Desktop Application:**
+
 ```bash
 dotnet run --project src/USAMKO.Desktop
 ```
 
 **Web Admin:**
+
 ```bash
 dotnet run --project src/USAMKO.Web
 # Navigate to: https://localhost:5001
@@ -108,6 +111,7 @@ npm run dev
 ```
 
 **Load extension in Chrome:**
+
 1. Open Chrome and navigate to `chrome://extensions/`
 2. Enable "Developer mode"
 3. Click "Load unpacked"
@@ -150,16 +154,19 @@ Add them to your `config/appsettings.json` or secrets file.
 For each platform you want to integrate:
 
 **Facebook/Instagram:**
+
 1. Create a Facebook App at https://developers.facebook.com/
 2. Get App ID and App Secret
 3. Add to configuration
 
 **Twitter/X:**
+
 1. Apply for developer access at https://developer.twitter.com/
 2. Create an app and get API keys
 3. Add to configuration
 
 **LinkedIn:**
+
 1. Create app at https://www.linkedin.com/developers/
 2. Get Client ID and Secret
 3. Add to configuration
@@ -193,11 +200,13 @@ dotnet test tests/USAMKO.Core.Tests
 ### Debugging
 
 **Visual Studio:**
+
 - Open `USAMKO.sln`
 - Set startup project (Desktop or Web)
 - Press F5 to debug
 
 **VS Code:**
+
 - Install C# extension
 - Open project folder
 - Use provided launch configurations

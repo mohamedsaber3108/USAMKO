@@ -4,7 +4,7 @@
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const event = new CustomEvent('USAMKOEvent', {
-    detail: { type: 'data', payload: message }
+    detail: { type: 'data', payload: message },
   });
   window.dispatchEvent(event);
 

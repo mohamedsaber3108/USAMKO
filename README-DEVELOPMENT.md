@@ -48,12 +48,14 @@ docker-compose ps
 ```
 
 **You should see:**
+
 - ✅ usamko-postgres (healthy)
 - ✅ usamko-redis (healthy)
 - ✅ usamko-rabbitmq (healthy)
 - ✅ usamko-minio (healthy)
 
 **Access UIs:**
+
 - RabbitMQ Management: http://localhost:15672 (user: `usamko`, pass: `dev_password_change_in_production`)
 - MinIO Console: http://localhost:9001 (user: `usamko`, pass: `dev_password_change_in_production`)
 
@@ -71,6 +73,7 @@ pnpm dlx @nestjs/cli new api
 ```
 
 **Then install dependencies:**
+
 ```bash
 cd api
 
@@ -102,6 +105,7 @@ pnpm dlx create-next-app@latest web
 ```
 
 **Then install dependencies:**
+
 ```bash
 cd web
 
@@ -196,6 +200,7 @@ model WorkflowExecution {
 ```
 
 **Run migration:**
+
 ```bash
 pnpm prisma migrate dev --name init
 pnpm prisma generate
@@ -211,10 +216,12 @@ pnpm dev
 ```
 
 **Expected output:**
+
 - API running on http://localhost:3000
 - Web running on http://localhost:3001
 
 **Test backend:**
+
 ```bash
 curl http://localhost:3000
 # Should return "Hello World!" or similar
@@ -222,6 +229,7 @@ curl http://localhost:3000
 
 **Test frontend:**
 Open browser: http://localhost:3001
+
 # Should see Next.js welcome page
 
 ---
@@ -229,6 +237,7 @@ Open browser: http://localhost:3001
 ## 🎯 Current Status
 
 **Completed:**
+
 - ✅ Monorepo structure (Turborepo)
 - ✅ Shared packages (types, utils)
 - ✅ Docker services (PostgreSQL, Redis, RabbitMQ, MinIO)
@@ -236,11 +245,13 @@ Open browser: http://localhost:3001
 - ✅ Code quality tools (ESLint, Prettier)
 
 **Next (You need to run Steps 3-6 above):**
+
 - ⏳ NestJS backend setup
 - ⏳ Next.js frontend setup
 - ⏳ Prisma database migration
 
 **After that:**
+
 - [ ] Implement authentication (Ticket 3.1)
 - [ ] Create first API endpoints
 - [ ] Build login/register UI
@@ -250,6 +261,7 @@ Open browser: http://localhost:3001
 ## 📚 Documentation
 
 All documentation is in `docs/`:
+
 - `MASTER_SPECIFICATION_PART1.md` - Architecture & Design
 - `MASTER_SPECIFICATION_PART2.md` - All 19 domains
 - `PHASE1_IMPLEMENTATION_TICKETS.md` - All 41 tickets for Phase 1
@@ -261,6 +273,7 @@ All documentation is in `docs/`:
 ## 🆘 Troubleshooting
 
 **Docker services not starting?**
+
 ```bash
 # Check Docker Desktop is running
 docker ps
@@ -271,6 +284,7 @@ docker-compose up -d
 ```
 
 **Port already in use?**
+
 ```bash
 # Kill process on port 5432 (PostgreSQL)
 netstat -ano | findstr :5432
@@ -278,6 +292,7 @@ taskkill /PID <PID> /F
 ```
 
 **pnpm not found?**
+
 ```bash
 npm install -g pnpm
 ```
@@ -287,6 +302,7 @@ npm install -g pnpm
 ## 🎉 You're Ready!
 
 Once you complete Steps 3-6 above, you'll have:
+
 - ✅ Full-stack TypeScript monorepo
 - ✅ NestJS backend with Prisma ORM
 - ✅ Next.js frontend with Tailwind CSS
@@ -294,6 +310,7 @@ Once you complete Steps 3-6 above, you'll have:
 - ✅ All supporting services running
 
 **Then run:**
+
 ```bash
 git add .
 git commit -m "feat: complete project setup (Tickets 1.1, 1.2, 1.4)"

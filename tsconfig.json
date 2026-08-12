@@ -27,14 +27,6 @@
       "@usamko/utils": ["./packages/utils/src/index.ts"]
     }
   },
-  "include": [
-    "apps/**/*",
-    "packages/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    ".next",
-    "out"
-  ]
+  "include": ["apps/**/*", "packages/**/*"],
+  "exclude": ["node_modules", "dist", ".next", "out"]
 }

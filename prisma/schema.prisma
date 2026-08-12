@@ -59,30 +59,49 @@ enum AccountStatus {
 
 // Models
 model User {
-  id        String   @id @default(uuid())
-  email     String
-  name      String
-  role      Role     @default(USER)
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  password  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(uuid())
+  email        String
+  name         String
+  role         Role     @default(USER)
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  password     String?
+  emailVerified Boolean @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   platformAccounts PlatformAccount[]
   workflows        Workflow[]
+  campaigns        Campaign[]
+  emailVerifications EmailVerification[]
+  passwordResets   PasswordReset[]
+  apiKeys          ApiKey[]
+  userSettings     UserSetting[]
+  teamMembers      TeamMember[]
+  teamActivityLogs TeamActivityLog[]
+  mediaFiles       MediaFile[]
+  notifications    Notification[]
   @@unique([tenantId, email])
 }
 
 model Tenant {
-  id        String   @id @default(uuid())
-  name      String
-  slug      String   @unique
-  status    TenantStatus @default(ACTIVE)
-  users     User[]
-  workflows Workflow[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String   @id @default(uuid())
+  name             String
+  slug             String   @unique
+  status           TenantStatus @default(ACTIVE)
+  users            User[]
+  workflows        Workflow[]
+  platformAccounts PlatformAccount[]
+  campaigns        Campaign[]
+  reports          Report[]
+  reportSchedules  ReportSchedule[]
+  webhooks         WebhookSubscription[]
+  teamMembers      TeamMember[]
+  teamActivityLogs TeamActivityLog[]
+  mediaFiles       MediaFile[]
+  notifications    Notification[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 model PlatformAccount {
@@ -92,32 +111,63 @@ model PlatformAccount {
   platform     SocialPlatform
   accountName  String
   accountId    String
+  username     String?
+  displayName  String?
+  profileUrl   String?
   accessToken  String?
   refreshToken String?
   expiresAt    DateTime?
+  cookies      Json?
   status       AccountStatus @default(DISCONNECTED)
-  userId       String
+  posts        Int          @default(0)
+  likes        Int          @default(0)
+  comments     Int          @default(0)
+  shares       Int          @default(0)
+  saves        Int          @default(0)
+  clicks       Int          @default(0)
+  followers    Int          @default(0)
+  engagement   Float        @default(0)
+  growth       Float        @default(0)
+  metadata     Json?
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tenantId     String
   tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  postsRel     PlatformPost[]
   createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  updatedAt    DateTime @updatedAt
+}
+
+model PlatformPost {
+  id               String       @id @default(uuid())
+  platformAccountId String
+  platformPostId   String
+  content          String
+  mediaUrl         String?
+  mediaType        String?
+  status           String       @default("draft")
+  error            String?
+  publishedAt      DateTime?
+  metadata         Json?
+  platformAccount  PlatformAccount @relation(fields: [platformAccountId], references: [id], onDelete: Cascade)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 }
 
 model Workflow {
-  id          String   @id @default(uuid())
-  tenantId    String
-  userId      String
-  name        String
-  description String?
-  status      WorkflowStatus @default(DRAFT)
-  definition  Json     // { nodes: [...], edges: [...] }
-  version     Int      @default(1)
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  executions  WorkflowExecution[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String   @id @default(uuid())
+  tenantId          String
+  userId            String
+  name              String
+  description       String?
+  status            WorkflowStatus @default(DRAFT)
+  definition        Json     // { nodes: [...], edges: [...] }
+  version           Int      @default(1)
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  executions        WorkflowExecution[]
+  workflowSchedules WorkflowSchedule[]
+  campaignExecutions CampaignExecution[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model WorkflowExecution {
@@ -138,7 +188,259 @@ model WorkflowSchedule {
   workflow       Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
   cronExpression String
   enabled        Boolean  @default(true)
+  status         String   @default("ACTIVE")
   nextRunAt      DateTime
   lastRunAt      DateTime?
+  lastResult     String?
   createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model EmailVerification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+}
+
+model Campaign {
+  id           String   @id @default(uuid())
+  tenantId     String
+  userId       String
+  name         String
+  description  String?
+  status       String   @default("draft")
+  type         String   // "social", "email", "ad"
+  config       Json?    // Campaign configuration
+  results      Json?    // Campaign results
+  scheduledAt  DateTime?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  executions   CampaignExecution[]
+  reportSchedules ReportSchedule[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model CampaignExecution {
+  id           String   @id @default(uuid())
+  campaignId   String
+  campaign     Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  workflowId   String?
+  workflow     Workflow? @relation(fields: [workflowId], references: [id])
+  status       String   @default("pending")
+  input        Json?
+  output       Json?    // Execution results (engagement, conversions, etc.)
+  error        String?
+  startedAt    DateTime @default(now())
+  completedAt  DateTime?
+  createdAt    DateTime @default(now())
+}
+
+// Report Models
+enum ReportType {
+  CAMPAIGN
+  PLATFORM
+  ENGAGEMENT
+}
+
+enum ReportFormat {
+  PDF
+  EXCEL
+  CSV
+}
+
+enum ReportStatus {
+  PENDING
+  GENERATING
+  COMPLETED
+  FAILED
+}
+
+enum ReportFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+model Report {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  type         ReportType
+  name         String
+  data         Json
+  format       ReportFormat
+  status       ReportStatus @default(PENDING)
+  downloadUrl  String?
+  scheduledAt  DateTime?
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime?
+}
+
+model ReportSchedule {
+  id             String   @id @default(uuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name           String
+  type           ReportType
+  platform       String?
+  campaignId     String?
+  campaign       Campaign? @relation(fields: [campaignId], references: [id])
+   frequency      ReportFrequency
+   recipients     Json
+   format         ReportFormat
+  enabled        Boolean  @default(true)
+  nextRunAt      DateTime
+  lastRunAt      DateTime?
+  lastResult     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// Webhook Models
+model WebhookSubscription {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+   url          String
+   events       Json
+   secret       String
+  active       Boolean  @default(true)
+  metadata     Json?
+  logs         WebhookLog[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model WebhookLog {
+  id             String   @id @default(uuid())
+  webhookId      String
+  webhook        WebhookSubscription @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  url            String
+  event          String
+  payload        Json
+  responseStatus Int?
+  responseBody   String?
+  success        Boolean  @default(false)
+  retryCount     Int      @default(0)
+  errorMessage   String?
+  createdAt      DateTime @default(now())
+}
+
+// API Key Model for API Key Management
+model ApiKey {
+  id           String   @id @default(uuid())
+  key          String   @unique
+  name         String
+  description  String?
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isActive     Boolean  @default(true)
+  permissions  Json?
+  lastUsedAt   DateTime?
+  expiresAt    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// User Settings Model for User Preferences
+model UserSetting {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  timezone     String   @default("UTC")
+  language     String   @default("en")
+  theme        String   @default("light") // "light", "dark", "system"
+  notifications Json?   // Notification preferences
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Team Member Model for Team Management
+model TeamMember {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role         String   @default("viewer") // "admin", "editor", "viewer"
+  permissions  Json?    // Custom permissions
+  invitedBy    String?
+  invitedAt    DateTime @default(now())
+  joinedAt     DateTime?
+  status       String   @default("active") // "active", "invited", "removed"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  @@unique([tenantId, userId])
+}
+
+// Team Activity Log Model
+model TeamActivityLog {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id])
+  action       String   // "invite", "remove", "update_role", "create", "update", "delete"
+  targetType   String   // "user", "workflow", "campaign", "platform_account"
+  targetId     String
+  details      Json?
+  createdAt    DateTime @default(now())
+}
+
+// Media Library Model for File Management
+model MediaFile {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileName     String
+  originalName String
+  mimeType     String
+  fileSize     Int
+  storagePath  String
+  storageType  String   @default("minio") // "minio", "s3", "local"
+  version      Int      @default(1)
+   metadata     Json?
+   tags         Json
+   isImage      Boolean  @default(false)
+  width        Int?
+  height       Int?
+  thumbnailUrl String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Notification Model for In-App Notifications
+model Notification {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         String   // "info", "success", "warning", "error"
+  title        String
+  message      String
+  isRead       Boolean  @default(false)
+  readAt       DateTime?
+  data         Json?
+  createdAt    DateTime @default(now())
+  @@index([userId, isRead])
 }

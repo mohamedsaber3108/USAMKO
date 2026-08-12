@@ -1,1 +1,0 @@
-{"files":{"apps/api/dist/main.js":{"size":30183,"mtime_nanos":1785515680912351500,"mode":420,"is_dir":false},"apps/api/.turbo/turbo-build.log":{"size":255,"mtime_nanos":1785515681534322800,"mode":420,"is_dir":false},"apps/api/dist":{"size":0,"mtime_nanos":0,"mode":0,"is_dir":true}},"order":["apps/api/.turbo/turbo-build.log","apps/api/dist","apps/api/dist/main.js"]}

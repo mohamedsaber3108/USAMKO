@@ -18,6 +18,7 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",
     "prettier": "^3.2.5",
+    "prisma": "^6.2.0",
     "turbo": "^2.0.0",
     "typescript": "^5.4.5"
   },
@@ -41,5 +42,8 @@
   "bugs": {
     "url": "https://github.com/mohamedsaber3108/USAMKO/issues"
   },
-  "homepage": "https://github.com/mohamedsaber3108/USAMKO#readme"
+  "homepage": "https://github.com/mohamedsaber3108/USAMKO#readme",
+  "dependencies": {
+    "@prisma/client": "^6.2.0"
+  }
 }

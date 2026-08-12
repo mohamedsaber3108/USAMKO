@@ -9,17 +9,17 @@
 const fb_api_req_names = [
   'CometUFIReactionsDialogQuery',
   'GroupsCometPeopleProfilesPaginatedListPaginationQuery',
-  'GroupsCometMembersPageNewMembersSectionRefetchQuery'
+  'GroupsCometMembersPageNewMembersSectionRefetchQuery',
 ];
 
 const fb_api_req_names_1 = [
   'CometUFIReactionsDialogTabContentRefetchQueryStable',
-  'GroupsCometMembersPageNewForumMembersSectionRefetchQuery'
+  'GroupsCometMembersPageNewForumMembersSectionRefetchQuery',
 ];
 
 // Facebook GraphQL interception
 chrome.webRequest.onBeforeRequest.addListener(
-  async (details) => {
+  async details => {
     const formData = details?.requestBody?.formData;
     if (!formData) return;
 
@@ -35,8 +35,8 @@ chrome.webRequest.onBeforeRequest.addListener(
           doc_id: formData['doc_id'] ? formData['doc_id'][0] : null,
           __dyn: formData['__dyn'] ? formData['__dyn'][0] : null,
           variables: formData['variables'] ? formData['variables'][0] : null,
-          fb_dtsg: formData['fb_dtsg'] ? formData['fb_dtsg'][0] : null
-        }
+          fb_dtsg: formData['fb_dtsg'] ? formData['fb_dtsg'][0] : null,
+        },
       });
     }
   },
@@ -46,15 +46,15 @@ chrome.webRequest.onBeforeRequest.addListener(
       'https://web.facebook.com/api/graphql/',
       'https://mobile.facebook.com/api/graphql/',
       'https://m.facebook.com/api/graphql/',
-      'https://mbasic.facebook.com/api/graphql/'
-    ]
+      'https://mbasic.facebook.com/api/graphql/',
+    ],
   },
   ['requestBody']
 );
 
 // Facebook Business Page message interception
 chrome.webRequest.onBeforeRequest.addListener(
-  async (details) => {
+  async details => {
     if (details?.method !== 'POST') return;
     if (!details?.url?.includes('https://business.facebook.com/api/graphql/')) return;
 
@@ -76,8 +76,8 @@ chrome.webRequest.onBeforeRequest.addListener(
           __dyn: formData['__dyn'][0],
           fb_dtsg: formData['fb_dtsg'][0],
           pageID: variables.pageID,
-          sender: formData['__user'][0]
-        }
+          sender: formData['__user'][0],
+        },
       });
     }
   },
@@ -87,10 +87,13 @@ chrome.webRequest.onBeforeRequest.addListener(
 
 // Twitter/X API header interception
 chrome.webRequest.onBeforeSendHeaders.addListener(
-  async (details) => {
+  async details => {
     if (details?.method !== 'GET') return;
-    if (!details?.url?.includes('twitter.com/i/api/graphql/') &&
-        !details?.url?.includes('api.twitter.com/graphql/')) return;
+    if (
+      !details?.url?.includes('twitter.com/i/api/graphql/') &&
+      !details?.url?.includes('api.twitter.com/graphql/')
+    )
+      return;
 
     const headers = {};
     for (const header of details.requestHeaders) {
@@ -101,17 +104,14 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
     sendMessageToTabs({ url: details.url, headers: headers });
   },
   {
-    urls: [
-      'https://twitter.com/i/api/graphql/*',
-      'https://api.twitter.com/graphql/*'
-    ]
+    urls: ['https://twitter.com/i/api/graphql/*', 'https://api.twitter.com/graphql/*'],
   },
   ['requestHeaders']
 );
 
 // Instagram API token interception
 chrome.webRequest.onBeforeSendHeaders.addListener(
-  async (details) => {
+  async details => {
     const tokens = {};
     for (const header of details.requestHeaders) {
       if (header.name === 'X-CSRFToken' || header.name === 'X-IG-App-ID') {

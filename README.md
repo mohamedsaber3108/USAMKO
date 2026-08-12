@@ -51,6 +51,7 @@ USAMKO/
 ## Technology Stack
 
 ### Backend
+
 - **.NET 8.0** - Modern, cross-platform framework
 - **Entity Framework Core** - ORM with migrations
 - **PostgreSQL** - Primary database
@@ -58,17 +59,20 @@ USAMKO/
 - **Hangfire** - Background job processing
 
 ### AI & Machine Learning
+
 - **Semantic Kernel** - AI orchestration
 - **OpenAI API** - GPT-4, GPT-4o, DALL-E
 - **Anthropic Claude API** - Advanced reasoning
 - **Local LLM Support** - Ollama, LM Studio
 
 ### Frontend
+
 - **Avalonia UI** - Modern cross-platform desktop
 - **Blazor** - Web admin interface
 - **TypeScript** - Chrome extension
 
 ### Automation
+
 - **Playwright** - Browser automation
 - **Selenium 4** - WebDriver support
 
@@ -86,12 +90,14 @@ USAMKO/
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/yourusername/usamko.git
    cd usamko
    ```
 
 2. **Restore dependencies**
+
    ```bash
    dotnet restore
    ```
@@ -101,6 +107,7 @@ USAMKO/
    - Update connection string for PostgreSQL/SQLite
 
 4. **Run migrations**
+
    ```bash
    dotnet ef database update --project src/USAMKO.Infrastructure
    ```
@@ -113,7 +120,7 @@ USAMKO/
    ```bash
    # Desktop application
    dotnet run --project src/USAMKO.Desktop
-   
+
    # Web admin
    dotnet run --project src/USAMKO.Web
    ```
@@ -178,12 +185,12 @@ USAMKO supports multiple AI providers with seamless switching:
 
 ### Supported Providers
 
-| Provider | Models | Use Cases |
-|----------|--------|-----------|
-| **OpenAI** | GPT-4, GPT-4o, DALL-E 3 | Content generation, image creation |
-| **Anthropic** | Claude 3.5 Sonnet, Opus | Complex reasoning, long-form content |
-| **Azure OpenAI** | GPT-4, Embeddings | Enterprise deployments |
-| **Local LLMs** | Llama 3, Mistral, Mixtral | Offline processing, privacy |
+| Provider         | Models                    | Use Cases                            |
+| ---------------- | ------------------------- | ------------------------------------ |
+| **OpenAI**       | GPT-4, GPT-4o, DALL-E 3   | Content generation, image creation   |
+| **Anthropic**    | Claude 3.5 Sonnet, Opus   | Complex reasoning, long-form content |
+| **Azure OpenAI** | GPT-4, Embeddings         | Enterprise deployments               |
+| **Local LLMs**   | Llama 3, Mistral, Mixtral | Offline processing, privacy          |
 
 ### Usage Example
 
@@ -249,15 +256,15 @@ public class CustomPlugin : IPlugin
 {
     public string Name => "My Custom Plugin";
     public string Version => "1.0.0";
-    
+
     public Task InitializeAsync(IPluginContext context)
     {
         // Register services
         context.Services.AddSingleton<IMyService, MyService>();
-        
+
         // Add custom workflows
         context.RegisterWorkflow<MyCustomWorkflow>();
-        
+
         return Task.CompletedTask;
     }
 }
@@ -272,6 +279,7 @@ See [Plugin Development Guide](docs/plugin-development.md).
 Create complex automation workflows with visual builder or code:
 
 ### Visual Builder
+
 Drag-and-drop interface for creating workflows without code.
 
 ### Code-Based Workflows
@@ -283,10 +291,10 @@ public class DailyPostingWorkflow : IWorkflow
     {
         // 1. Generate content with AI
         var content = await context.AI.GenerateContentAsync(...);
-        
+
         // 2. Get optimal posting time
         var bestTime = await context.Analytics.GetOptimalPostTimeAsync();
-        
+
         // 3. Schedule posts across platforms
         await context.Scheduler.SchedulePostAsync(new Post
         {
@@ -294,7 +302,7 @@ public class DailyPostingWorkflow : IWorkflow
             Platforms = new[] { Platform.Facebook, Platform.Twitter },
             ScheduledFor = bestTime
         });
-        
+
         // 4. Monitor engagement
         await context.Monitoring.TrackEngagementAsync(...);
     }
@@ -317,6 +325,7 @@ The USAMKO Chrome extension enhances your browser experience:
 ### Installation
 
 1. Build the extension:
+
    ```bash
    cd extension
    npm install
@@ -357,6 +366,7 @@ USAMKO is optimized for speed and efficiency:
 - 📊 **Query Optimization** - Indexed database queries
 
 **Benchmarks:**
+
 - Application startup: <2 seconds
 - API response time: <100ms (95th percentile)
 - Post scheduling: <50ms
@@ -423,6 +433,7 @@ dotnet run --project src/USAMKO.Web
 ### Development Environment
 
 Recommended tools:
+
 - **Visual Studio 2022** or **JetBrains Rider**
 - **Visual Studio Code** (for extension development)
 - **SQL Server Management Studio** or **pgAdmin** (for database)
@@ -451,18 +462,21 @@ USAMKO is a personal project, but contributions are welcome! This is about build
 ### Planned Features
 
 **v1.1** (Q3 2026)
+
 - [ ] Advanced AI content scheduling
 - [ ] Team collaboration features
 - [ ] White-label customization
 - [ ] Mobile app (iOS/Android)
 
 **v1.2** (Q4 2026)
+
 - [ ] Video content AI analysis
 - [ ] Influencer identification
 - [ ] Competitor tracking
 - [ ] Advanced sentiment analysis
 
 **v2.0** (Q1 2027)
+
 - [ ] Multi-language AI models
 - [ ] Voice content generation
 - [ ] AR/VR content support
@@ -481,6 +495,7 @@ This is proprietary software. All rights reserved.
 ## Support
 
 For support, please contact:
+
 - 📧 Email: support@usamko.com
 - 💬 Discord: [Join our community](https://discord.gg/usamko)
 - 📖 Documentation: [docs.usamko.com](https://docs.usamko.com)
@@ -493,6 +508,7 @@ For support, please contact:
 Built with passion and dedication to create the best social media automation platform possible.
 
 Special thanks to:
+
 - OpenAI for GPT models
 - Anthropic for Claude
 - Microsoft for .NET and Azure

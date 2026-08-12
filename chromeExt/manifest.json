@@ -12,16 +12,28 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://*.facebook.com/*", "https://*.twitter.com/*", "https://*.instagram.com/*"],
+      "matches": [
+        "https://*.facebook.com/*",
+        "https://*.twitter.com/*",
+        "https://*.instagram.com/*"
+      ],
       "js": ["content.js"]
     }
   ],
   "web_accessible_resources": [
     {
       "resources": ["pageScript.js"],
-      "matches": ["https://*.facebook.com/*", "https://*.twitter.com/*", "https://*.instagram.com/*"]
+      "matches": [
+        "https://*.facebook.com/*",
+        "https://*.twitter.com/*",
+        "https://*.instagram.com/*"
+      ]
     }
   ],
   "permissions": ["scripting", "activeTab", "webRequest", "tabs", "storage"],
-  "host_permissions": ["https://*.facebook.com/*", "https://*.twitter.com/*", "https://*.instagram.com/*"]
+  "host_permissions": [
+    "https://*.facebook.com/*",
+    "https://*.twitter.com/*",
+    "https://*.instagram.com/*"
+  ]
 }

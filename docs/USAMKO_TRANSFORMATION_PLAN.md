@@ -22,6 +22,7 @@ USAMKO is a next-generation, AI-powered social media automation and management p
 ## Technology Stack Recommendations
 
 ### Backend Core
+
 - **.NET 8.0** (or .NET 9.0) - Latest LTS version with modern C# features
 - **ASP.NET Core** - For API services and web interface
 - **Entity Framework Core** - Modern ORM with migrations
@@ -30,11 +31,13 @@ USAMKO is a next-generation, AI-powered social media automation and management p
 - **Polly** - Resilience and transient-fault-handling
 
 ### Frontend/UI
+
 - **Avalonia UI** or **MAUI** - Modern cross-platform desktop UI
 - **Blazor** - For web-based admin dashboard
 - **TailwindCSS** or **MudBlazor** - Modern, customizable UI components
 
 ### AI Integration Layer
+
 - **Semantic Kernel** (Microsoft) - AI orchestration framework
 - **LangChain.NET** - For complex AI workflows
 - **OpenAI API** - GPT-4, GPT-4o for content generation
@@ -43,25 +46,30 @@ USAMKO is a next-generation, AI-powered social media automation and management p
 - **Local LLM Support** - Ollama, LM Studio integration for offline AI
 
 ### Automation & Browser Control
+
 - **Playwright** - Modern browser automation (already present)
 - **Selenium 4** - Maintain compatibility (already present)
 - **Puppeteer Sharp** - Additional Chrome automation layer
 
 ### Database
+
 - **PostgreSQL** - Primary database (powerful, open-source)
 - **Redis** - Caching and session management
 - **SQLite** - Embedded option for local profiles
 
 ### Message Queue & Background Jobs
+
 - **Hangfire** - Background job processing
 - **RabbitMQ** or **Azure Service Bus** - Message queuing for distributed tasks
 
 ### Chrome Extension
+
 - **Manifest V3** (already implemented)
 - **TypeScript** - Type-safe development
 - **Webpack/Vite** - Modern bundling
 
 ### Security
+
 - **IdentityServer** or **Keycloak** - OAuth2/OIDC authentication
 - **Azure Key Vault** or **HashiCorp Vault** - Secure secrets management
 - **Data Protection API** - Encrypt sensitive data at rest
@@ -71,6 +79,7 @@ USAMKO is a next-generation, AI-powered social media automation and management p
 ## Architecture Design
 
 ### Layer 1: Core Platform (USAMKO.Core)
+
 ```
 USAMKO.Core/
 ├── Domain/              # Business entities and rules
@@ -82,6 +91,7 @@ USAMKO.Core/
 ```
 
 ### Layer 2: Infrastructure (USAMKO.Infrastructure)
+
 ```
 USAMKO.Infrastructure/
 ├── Data/
@@ -95,6 +105,7 @@ USAMKO.Infrastructure/
 ```
 
 ### Layer 3: AI Layer (USAMKO.AI)
+
 ```
 USAMKO.AI/
 ├── Models/
@@ -110,6 +121,7 @@ USAMKO.AI/
 ```
 
 ### Layer 4: Platform Integrations (USAMKO.Platforms)
+
 ```
 USAMKO.Platforms/
 ├── Common/              # Shared platform interfaces
@@ -126,6 +138,7 @@ USAMKO.Platforms/
 ```
 
 ### Layer 5: Automation Engine (USAMKO.Automation)
+
 ```
 USAMKO.Automation/
 ├── Workflows/           # Workflow definitions
@@ -137,6 +150,7 @@ USAMKO.Automation/
 ```
 
 ### Layer 6: Plugin System (USAMKO.Plugins)
+
 ```
 USAMKO.Plugins/
 ├── SDK/                 # Plugin development kit
@@ -146,6 +160,7 @@ USAMKO.Plugins/
 ```
 
 ### Layer 7: Desktop Application (USAMKO.Desktop)
+
 ```
 USAMKO.Desktop/
 ├── Views/               # UI views/pages
@@ -157,6 +172,7 @@ USAMKO.Desktop/
 ```
 
 ### Layer 8: Web Admin (USAMKO.Web)
+
 ```
 USAMKO.Web/
 ├── Pages/               # Blazor pages
@@ -167,6 +183,7 @@ USAMKO.Web/
 ```
 
 ### Layer 9: Chrome Extension (USAMKO.Extension)
+
 ```
 USAMKO.Extension/
 ├── background/          # Background service worker
@@ -181,6 +198,7 @@ USAMKO.Extension/
 ## Configuration System Design
 
 ### Hierarchical Configuration
+
 ```
 Configuration Hierarchy:
 1. System Defaults (embedded in code)
@@ -191,6 +209,7 @@ Configuration Hierarchy:
 ```
 
 ### Configuration File Structure
+
 ```json
 {
   "system": {
@@ -361,6 +380,7 @@ CREATE TABLE SystemSettings (
 ## Phase-by-Phase Implementation Plan
 
 ### Phase 1: Foundation (Weeks 1-2)
+
 **Goal**: Set up modern project structure and core infrastructure
 
 1. ✓ Create new solution structure with proper layering
@@ -375,6 +395,7 @@ CREATE TABLE SystemSettings (
 10. ✓ Implement basic authentication/authorization
 
 ### Phase 2: Rebranding & Data Migration (Week 3)
+
 **Goal**: Remove all Sender Pro references and prepare for data migration
 
 1. ✓ Rename all files, folders, and projects to USAMKO
@@ -385,6 +406,7 @@ CREATE TABLE SystemSettings (
 6. ✓ Generate new application certificates/signing
 
 ### Phase 3: AI Integration Layer (Weeks 4-5)
+
 **Goal**: Build comprehensive AI capabilities
 
 1. ✓ Implement AI provider abstraction layer
@@ -399,6 +421,7 @@ CREATE TABLE SystemSettings (
 10. ✓ Implement AI-powered content suggestions
 
 ### Phase 4: Platform Integrations (Weeks 6-8)
+
 **Goal**: Rebuild all social media platform integrations with modern approach
 
 1. ✓ Design common platform interface
@@ -413,6 +436,7 @@ CREATE TABLE SystemSettings (
 10. ✓ Build unified posting interface
 
 ### Phase 5: Automation Engine (Weeks 9-10)
+
 **Goal**: Create powerful, flexible automation system
 
 1. ✓ Design workflow definition format
@@ -427,6 +451,7 @@ CREATE TABLE SystemSettings (
 10. ✓ Build workflow analytics and reporting
 
 ### Phase 6: Plugin Architecture (Weeks 11-12)
+
 **Goal**: Enable unlimited extensibility
 
 1. ✓ Design plugin SDK with clear interfaces
@@ -441,6 +466,7 @@ CREATE TABLE SystemSettings (
 10. ✓ Write comprehensive plugin documentation
 
 ### Phase 7: Modern Desktop UI (Weeks 13-15)
+
 **Goal**: Build beautiful, intuitive desktop application
 
 1. ✓ Choose UI framework (Avalonia/MAUI)
@@ -458,6 +484,7 @@ CREATE TABLE SystemSettings (
 13. ✓ Add multi-language support
 
 ### Phase 8: Web Admin Panel (Weeks 16-17)
+
 **Goal**: Create web-based administration interface
 
 1. ✓ Set up Blazor Server/WASM project
@@ -470,6 +497,7 @@ CREATE TABLE SystemSettings (
 8. ✓ Create backup/restore functionality
 
 ### Phase 9: Enhanced Chrome Extension (Week 18)
+
 **Goal**: Rebuild extension with modern capabilities
 
 1. ✓ Refactor to TypeScript
@@ -482,6 +510,7 @@ CREATE TABLE SystemSettings (
 8. ✓ Create extension settings sync
 
 ### Phase 10: Testing & Quality Assurance (Weeks 19-20)
+
 **Goal**: Ensure production-ready quality
 
 1. ✓ Write unit tests (>80% coverage)
@@ -494,6 +523,7 @@ CREATE TABLE SystemSettings (
 8. ✓ Bug fixing and optimization
 
 ### Phase 11: Documentation & Deployment (Week 21)
+
 **Goal**: Prepare for launch
 
 1. ✓ Write user documentation
@@ -506,6 +536,7 @@ CREATE TABLE SystemSettings (
 8. ✓ Create deployment runbooks
 
 ### Phase 12: Launch & Iteration (Week 22+)
+
 **Goal**: Release and gather feedback
 
 1. ✓ Beta release to select users
@@ -519,6 +550,7 @@ CREATE TABLE SystemSettings (
 ## Key Features to Implement
 
 ### AI-Powered Features
+
 - ✓ Content generation with multiple AI models
 - ✓ Automatic hashtag suggestions
 - ✓ Sentiment analysis before posting
@@ -531,6 +563,7 @@ CREATE TABLE SystemSettings (
 - ✓ Automated responses with AI personality
 
 ### Advanced Automation
+
 - ✓ Visual workflow builder (drag-and-drop)
 - ✓ Conditional logic in workflows
 - ✓ Multi-step approval processes
@@ -542,6 +575,7 @@ CREATE TABLE SystemSettings (
 - ✓ Automated reporting
 
 ### Analytics & Insights
+
 - ✓ Real-time engagement tracking
 - ✓ Comprehensive analytics dashboard
 - ✓ Custom report builder
@@ -552,6 +586,7 @@ CREATE TABLE SystemSettings (
 - ✓ Export to Excel/PDF
 
 ### Content Management
+
 - ✓ Media library with tags and search
 - ✓ Content calendar with drag-drop
 - ✓ Template library
@@ -561,6 +596,7 @@ CREATE TABLE SystemSettings (
 - ✓ RSS feed integration
 
 ### Team Collaboration
+
 - ✓ Multiple user roles and permissions
 - ✓ Task assignment
 - ✓ Internal commenting
@@ -569,6 +605,7 @@ CREATE TABLE SystemSettings (
 - ✓ White-label options
 
 ### Security & Compliance
+
 - ✓ End-to-end encryption
 - ✓ Two-factor authentication
 - ✓ IP whitelisting
@@ -583,17 +620,17 @@ CREATE TABLE SystemSettings (
 
 **Old → New Transformations:**
 
-| Old Name | New Name |
-|----------|----------|
-| Sender Pro.exe | USAMKO.exe |
-| Sender Pro.exe.config | USAMKO.exe.config |
-| SenderProBrowsers | USAMKOBrowsers |
-| SenderProRecorderX64 | USAMKORecorderX64 |
-| SenderProRecorderX86 | USAMKORecorderX86 |
+| Old Name                    | New Name                 |
+| --------------------------- | ------------------------ |
+| Sender Pro.exe              | USAMKO.exe               |
+| Sender Pro.exe.config       | USAMKO.exe.config        |
+| SenderProBrowsers           | USAMKOBrowsers           |
+| SenderProRecorderX64        | USAMKORecorderX64        |
+| SenderProRecorderX86        | USAMKORecorderX86        |
 | SenderProScreenRecorder.exe | USAMKOScreenRecorder.exe |
-| xhSenderPro | USAMKO |
-| xhSenderProEvent | USAMKOEvent |
-| senderxHRPro | usamkoXHR |
+| xhSenderPro                 | USAMKO                   |
+| xhSenderProEvent            | USAMKOEvent              |
+| senderxHRPro                | usamkoXHR                |
 
 ---
 
@@ -630,6 +667,7 @@ New:
 ## Security Improvements
 
 ### Current Issues to Fix:
+
 1. ❌ Plain-text credentials in config file
 2. ❌ No encryption for sensitive data
 3. ❌ Hard-coded "Trash" encrypted value
@@ -637,6 +675,7 @@ New:
 5. ❌ No audit logging
 
 ### New Security Measures:
+
 1. ✅ Use Data Protection API for encryption
 2. ✅ Store credentials in secure vault (Azure Key Vault / local encrypted store)
 3. ✅ Implement proper OAuth2 flows for social platforms
@@ -708,6 +747,7 @@ Track these KPIs to measure success:
 **Estimated Development Time**: 22+ weeks (5-6 months)
 
 **Required Skills**:
+
 - .NET / C# expert
 - Frontend developer (Blazor/Avalonia)
 - Database architect
@@ -716,6 +756,7 @@ Track these KPIs to measure success:
 - AI/ML integration specialist
 
 **Third-Party Services**:
+
 - OpenAI API subscription
 - Anthropic Claude subscription
 - Cloud hosting (Azure/AWS)

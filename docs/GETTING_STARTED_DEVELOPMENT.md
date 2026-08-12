@@ -19,6 +19,7 @@ Before you start coding, ensure you have:
 - [ ] PostgreSQL client (optional, for debugging)
 
 **Check your setup:**
+
 ```bash
 node --version    # Should be v20+ or v22+
 pnpm --version    # Should be 8.0+
@@ -64,6 +65,7 @@ pnpm dlx create-turbo@latest
 ```
 
 This creates:
+
 ```
 usamko/
 ├── apps/
@@ -155,6 +157,7 @@ pnpm prisma init
 ```
 
 **Update `apps/api/package.json`:**
+
 ```json
 {
   "name": "@usamko/api",
@@ -200,6 +203,7 @@ pnpm add axios            # HTTP client
 ```
 
 **Update `apps/web/package.json`:**
+
 ```json
 {
   "name": "@usamko/web",
@@ -477,6 +481,7 @@ cp .env.example .env
 ```
 
 **Start the services:**
+
 ```bash
 docker-compose up -d
 
@@ -497,6 +502,7 @@ cd apps/api
 ```
 
 **Create `prisma/schema.prisma`:**
+
 ```prisma
 // This is your Prisma schema file
 
@@ -584,6 +590,7 @@ model WorkflowExecution {
 ```
 
 **Run migration:**
+
 ```bash
 pnpm prisma migrate dev --name init
 
@@ -656,6 +663,7 @@ pnpm dev
 ```
 
 **Test backend:**
+
 ```bash
 curl http://localhost:3000
 # Should return: "Hello World!" or similar
@@ -663,6 +671,7 @@ curl http://localhost:3000
 
 **Test frontend:**
 Open browser: http://localhost:3001
+
 # Should see Next.js welcome page
 
 ---
