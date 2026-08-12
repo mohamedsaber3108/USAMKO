@@ -11,11 +11,15 @@ import { AutomationModule } from './automation/automation.module';
 import { CampaignModule } from './campaigns/campaign.module';
 import { AiModule } from './ai/ai.module';
 import { ReportModule } from './reports/report.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { SchedulerModule } from './scheduler/scheduler.module';
+import { TenantModule } from './tenant/tenant.module';
 import { WebhookModule } from './webhooks/webhook.module';
 import { ApiKeyModule } from './api-keys/api-key.module';
 import { StorageModule } from './storage/storage.module';
 import { NotificationModule } from './notifications/notification.module';
 import { SettingsModule } from './settings/settings.module';
+import { PrismaService } from './prisma.service';
 import { LoggerService } from './common/services/logger.service';
 import { RequestTimingMiddleware } from './common/middleware/request-timing.middleware';
 
@@ -47,8 +51,11 @@ import { RequestTimingMiddleware } from './common/middleware/request-timing.midd
     StorageModule,
     NotificationModule,
     SettingsModule,
+    AnalyticsModule,
+    SchedulerModule,
+    TenantModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, PrismaService],
 })
 export class AppModule {}
