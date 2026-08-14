@@ -16,6 +16,8 @@ import { User as UserDecorator } from '../common/decorators/user.decorator';
 import { Tenant as TenantDecorator } from '../common/decorators/tenant.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CampaignService } from './campaign.service';
+import { CampaignExecutionService } from './execution/execution.service';
+import { TrackerService } from './execution/tracker.service';
 import { CreateCampaignDto } from './dto/create-campaign.dto';
 import { UpdateCampaignDto } from './dto/update-campaign.dto';
 import { CampaignStatus, CampaignType } from './interfaces/campaign.interface';
@@ -23,7 +25,11 @@ import { CampaignStatus, CampaignType } from './interfaces/campaign.interface';
 @Controller('campaigns')
 @UseGuards(JwtAuthGuard)
 export class CampaignController {
-  constructor(private readonly campaignService: CampaignService) {}
+  constructor(
+    private readonly campaignService: CampaignService,
+    private readonly executionService: CampaignExecutionService,
+    private readonly trackerService: TrackerService,
+  ) {}
 
   /**
    * Create a new campaign
@@ -100,44 +106,63 @@ export class CampaignController {
   /**
    * Start campaign execution
    */
-  @Post(':id/start')
-  async start(
+  @Post(':id/execute')
+  async execute(
     @Param('id') id: string,
-    @TenantDecorator('id') tenantId: string,
+    @UserDecorator('id') userId: string,
   ) {
-    return this.campaignService.start(id, tenantId);
+    return this.executionService.executeCampaign(id, userId);
   }
 
   /**
-   * Pause running campaign
+   * Pause running campaign execution
    */
   @Post(':id/pause')
   async pause(
     @Param('id') id: string,
-    @TenantDecorator('id') tenantId: string,
   ) {
-    return this.campaignService.pause(id, tenantId);
+    return this.executionService.pauseExecution(id);
   }
 
   /**
-   * Resume paused campaign
-   */
-  @Post(':id/resume')
-  async resume(
-    @Param('id') id: string,
-    @TenantDecorator('id') tenantId: string,
-  ) {
-    return this.campaignService.resume(id, tenantId);
-  }
-
-  /**
-   * Cancel campaign
+   * Cancel campaign execution
    */
   @Post(':id/cancel')
   async cancel(
     @Param('id') id: string,
+  ) {
+    return this.executionService.cancelExecution(id);
+  }
+
+  /**
+   * Get campaign executions
+   */
+  @Get(':id/executions')
+  async getExecutions(
+    @Param('id') id: string,
     @TenantDecorator('id') tenantId: string,
   ) {
-    return this.campaignService.cancel(id, tenantId);
+    // Get all executions for this campaign
+    return { executions: [], message: 'Implementation pending' };
+  }
+
+  /**
+   * Get execution status
+   */
+  @Get('executions/:executionId')
+  async getExecutionStatus(
+    @Param('executionId') executionId: string,
+  ) {
+    return this.executionService.getExecutionStatus(executionId);
+  }
+
+  /**
+   * Get campaign analytics
+   */
+  @Get(':id/analytics')
+  async getAnalytics(
+    @Param('id') id: string,
+  ) {
+    return this.trackerService.getCampaignStats(id);
   }
 }
