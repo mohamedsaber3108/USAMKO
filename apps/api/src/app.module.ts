@@ -22,6 +22,7 @@ import { StorageModule } from './storage/storage.module';
 import { NotificationModule } from './notifications/notification.module';
 import { SettingsModule } from './settings/settings.module';
 import { LeadsModule } from './leads/leads.module';
+import { ResearchModule } from './research/research.module';
 import { PrismaService } from './prisma.service';
 import { LoggerService } from './common/services/logger.service';
 import { RequestTimingMiddleware } from './common/middleware/request-timing.middleware';
@@ -62,6 +63,7 @@ import { RequestTimingMiddleware } from './common/middleware/request-timing.midd
     SchedulerModule,
     TenantModule,
     LeadsModule,
+    ResearchModule, // 100% FREE Research & Data Platform
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
