@@ -48,6 +48,8 @@ enum SocialPlatform {
   TELEGRAM
   PINTEREST
   REDDIT
+  VK
+  ASKFM
 }
 
 enum AccountStatus {
@@ -81,6 +83,7 @@ model User {
   teamActivityLogs TeamActivityLog[]
   mediaFiles       MediaFile[]
   notifications    Notification[]
+  credentialVaults CredentialVault[]
   @@unique([tenantId, email])
 }
 
@@ -100,6 +103,7 @@ model Tenant {
   teamActivityLogs TeamActivityLog[]
   mediaFiles       MediaFile[]
   notifications    Notification[]
+  credentialVaults CredentialVault[]
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }
@@ -443,4 +447,44 @@ model Notification {
   data         Json?
   createdAt    DateTime @default(now())
   @@index([userId, isRead])
+}
+
+// Credential Vault Model for Encrypted Credentials
+model CredentialVault {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key       String   // e.g., "facebook_token", "hunter_api_key"
+  value     String   @db.Text // Encrypted JSON: {ciphertext, iv, authTag}
+  metadata  Json?    // NOT encrypted - use for non-sensitive data
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, userId, key], name: "tenantId_userId_key")
+  @@index([tenantId])
+  @@index([userId])
+}
+
+// Audit Log Model for Security & Compliance
+model AuditLog {
+  id        String   @id @default(uuid())
+  tenantId  String?
+  userId    String?
+  action    String   // "POST /campaigns", "DELETE /platforms/123"
+  entity    String?  // "Campaign", "PlatformAccount"
+  entityId  String?  // "campaign_123"
+  changes   Json?    // { name: "New Campaign", ... } - sensitive fields redacted
+  error     String?  // Error message if action failed
+  success   Boolean  @default(true)
+  ipAddress String?
+  userAgent String?
+  duration  Int?     // Milliseconds
+  timestamp DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([timestamp])
+  @@index([entity, entityId])
 }

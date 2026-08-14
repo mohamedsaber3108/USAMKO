@@ -3,6 +3,8 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
 import * as helmetModule from 'helmet';
 import { RequestTimingMiddleware } from './common/middleware/request-timing.middleware';
+import { AuditInterceptor } from './audit/audit.interceptor';
+import { AuditService } from './audit/audit.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -27,6 +29,11 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  // Global audit interceptor (Phase 1 Security)
+  const auditService = app.get(AuditService);
+  app.useGlobalInterceptors(new AuditInterceptor(auditService));
+  Logger.log('✅ Audit logging enabled');
 
   const port = process.env.PORT || 3000;
   await app.listen(port);

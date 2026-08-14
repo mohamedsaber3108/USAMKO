@@ -4,6 +4,8 @@ import { BullModule } from '@nestjs/bull';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { SecurityModule } from './security/security.module';
+import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { WorkflowModule } from './workflow/workflow.module';
 import { PlatformModule } from './platforms/platform.module';
@@ -19,6 +21,7 @@ import { ApiKeyModule } from './api-keys/api-key.module';
 import { StorageModule } from './storage/storage.module';
 import { NotificationModule } from './notifications/notification.module';
 import { SettingsModule } from './settings/settings.module';
+import { LeadsModule } from './leads/leads.module';
 import { PrismaService } from './prisma.service';
 import { LoggerService } from './common/services/logger.service';
 import { RequestTimingMiddleware } from './common/middleware/request-timing.middleware';
@@ -39,6 +42,10 @@ import { RequestTimingMiddleware } from './common/middleware/request-timing.midd
       ttl: 60000,
       limit: 100,
     }]),
+    // Security & Audit (Phase 1)
+    SecurityModule,
+    AuditModule,
+    // Feature Modules
     AuthModule,
     WorkflowModule,
     PlatformModule,
@@ -54,6 +61,7 @@ import { RequestTimingMiddleware } from './common/middleware/request-timing.midd
     AnalyticsModule,
     SchedulerModule,
     TenantModule,
+    LeadsModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

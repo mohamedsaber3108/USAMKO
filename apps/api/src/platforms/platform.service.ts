@@ -2,6 +2,7 @@
 
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { EncryptionService } from '../security/encryption.service';
 import { SocialPlatform, AccountStatus, PlatformAccount, PlatformPost } from './platform.model';
 import { CreatePostDto } from './dto/create-post.dto';
 import { PostResponseDto, PostStatus } from './dto/post-response.dto';
@@ -9,10 +10,47 @@ import { FacebookAdapter } from './adapters/facebook.adapter';
 import { InstagramAdapter } from './adapters/instagram.adapter';
 import { LinkedInAdapter } from './adapters/linkedin.adapter';
 import { TwitterAdapter } from './adapters/twitter.adapter';
+import { TelegramAdapter } from './adapters/telegram.adapter';
+import { YouTubeAdapter } from './adapters/youtube.adapter';
+import { PinterestAdapter } from './adapters/pinterest.adapter';
+import { RedditAdapter } from './adapters/reddit.adapter';
+import { VKAdapter } from './adapters/vk.adapter';
+import { AskFmAdapter } from './adapters/askfm.adapter';
 
 @Injectable()
 export class PlatformService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly encryption: EncryptionService,
+  ) {}
+
+  /**
+   * Decrypt token if it's encrypted JSON format
+   */
+  private async decryptTokenIfNeeded(token: string | null, tenantId: string): Promise<string | undefined> {
+    if (!token) return undefined;
+
+    try {
+      // Check if it's encrypted JSON format
+      const parsed = JSON.parse(token);
+      if (parsed.ciphertext && parsed.iv && parsed.authTag) {
+        // It's encrypted - decrypt it
+        return await this.encryption.decryptFromJson(token, tenantId);
+      }
+      // Not encrypted - return as-is (for backward compatibility)
+      return token;
+    } catch {
+      // Not JSON - return as plain text (for backward compatibility)
+      return token;
+    }
+  }
+
+  /**
+   * Encrypt token for storage
+   */
+  private async encryptToken(token: string, tenantId: string): Promise<string> {
+    return await this.encryption.encryptToJson(token, tenantId);
+  }
 
   /**
    * Get all platform accounts for a tenant
@@ -23,24 +61,29 @@ export class PlatformService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return accounts.map(a => ({
-      id: a.id,
-      tenantId: a.tenantId,
-      userId: a.userId,
-      platform: a.platform as SocialPlatform,
-      accountName: a.accountName,
-      accountId: a.accountId,
-      username: a.username || undefined,
-      displayName: a.displayName || undefined,
-      profileUrl: a.profileUrl || undefined,
-      accessToken: a.accessToken || undefined,
-      refreshToken: a.refreshToken || undefined,
-      expiresAt: a.expiresAt || undefined,
-      cookies: a.cookies as any,
-      status: a.status as AccountStatus,
-      createdAt: a.createdAt,
-      updatedAt: a.updatedAt,
-    }));
+    // Decrypt tokens for each account
+    const decryptedAccounts = await Promise.all(
+      accounts.map(async (a) => ({
+        id: a.id,
+        tenantId: a.tenantId,
+        userId: a.userId,
+        platform: a.platform as SocialPlatform,
+        accountName: a.accountName,
+        accountId: a.accountId,
+        username: a.username || undefined,
+        displayName: a.displayName || undefined,
+        profileUrl: a.profileUrl || undefined,
+        accessToken: await this.decryptTokenIfNeeded(a.accessToken, tenantId),
+        refreshToken: await this.decryptTokenIfNeeded(a.refreshToken, tenantId),
+        expiresAt: a.expiresAt || undefined,
+        cookies: a.cookies as any,
+        status: a.status as AccountStatus,
+        createdAt: a.createdAt,
+        updatedAt: a.updatedAt,
+      }))
+    );
+
+    return decryptedAccounts;
   }
 
   /**
@@ -63,8 +106,8 @@ export class PlatformService {
       username: account.username || undefined,
       displayName: account.displayName || undefined,
       profileUrl: account.profileUrl || undefined,
-      accessToken: account.accessToken || undefined,
-      refreshToken: account.refreshToken || undefined,
+      accessToken: await this.decryptTokenIfNeeded(account.accessToken, account.tenantId),
+      refreshToken: await this.decryptTokenIfNeeded(account.refreshToken, account.tenantId),
       expiresAt: account.expiresAt || undefined,
       cookies: account.cookies as any,
       status: account.status as AccountStatus,
@@ -85,24 +128,29 @@ export class PlatformService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return accounts.map(a => ({
-      id: a.id,
-      tenantId: a.tenantId,
-      userId: a.userId,
-      platform: a.platform as SocialPlatform,
-      accountName: a.accountName,
-      accountId: a.accountId,
-      username: a.username || undefined,
-      displayName: a.displayName || undefined,
-      profileUrl: a.profileUrl || undefined,
-      accessToken: a.accessToken || undefined,
-      refreshToken: a.refreshToken || undefined,
-      expiresAt: a.expiresAt || undefined,
-      cookies: a.cookies as any,
-      status: a.status as AccountStatus,
-      createdAt: a.createdAt,
-      updatedAt: a.updatedAt,
-    }));
+    // Decrypt tokens for each account
+    const decryptedAccounts = await Promise.all(
+      accounts.map(async (a) => ({
+        id: a.id,
+        tenantId: a.tenantId,
+        userId: a.userId,
+        platform: a.platform as SocialPlatform,
+        accountName: a.accountName,
+        accountId: a.accountId,
+        username: a.username || undefined,
+        displayName: a.displayName || undefined,
+        profileUrl: a.profileUrl || undefined,
+        accessToken: await this.decryptTokenIfNeeded(a.accessToken, tenantId),
+        refreshToken: await this.decryptTokenIfNeeded(a.refreshToken, tenantId),
+        expiresAt: a.expiresAt || undefined,
+        cookies: a.cookies as any,
+        status: a.status as AccountStatus,
+        createdAt: a.createdAt,
+        updatedAt: a.updatedAt,
+      }))
+    );
+
+    return decryptedAccounts;
   }
 
   /**
@@ -134,6 +182,14 @@ export class PlatformService {
       throw new ConflictException('Account already connected');
     }
 
+    // Encrypt tokens before storing
+    const encryptedAccessToken = accessToken
+      ? await this.encryptToken(accessToken, tenantId)
+      : null;
+    const encryptedRefreshToken = refreshToken
+      ? await this.encryptToken(refreshToken, tenantId)
+      : null;
+
     const account = await this.prisma.platformAccount.create({
       data: {
         id: `platform_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -145,8 +201,8 @@ export class PlatformService {
         username: username || null,
         displayName: displayName || null,
         profileUrl: profileUrl || null,
-        accessToken: accessToken || null,
-        refreshToken: refreshToken || null,
+        accessToken: encryptedAccessToken,
+        refreshToken: encryptedRefreshToken,
         expiresAt: expiresAt || null,
         cookies: cookies || null,
         status: AccountStatus.CONNECTED as any,
@@ -163,8 +219,8 @@ export class PlatformService {
       username: account.username || undefined,
       displayName: account.displayName || undefined,
       profileUrl: account.profileUrl || undefined,
-      accessToken: account.accessToken || undefined,
-      refreshToken: account.refreshToken || undefined,
+      accessToken: accessToken, // Return unencrypted for response
+      refreshToken: refreshToken, // Return unencrypted for response
       expiresAt: account.expiresAt || undefined,
       cookies: account.cookies as any,
       status: account.status as AccountStatus,
@@ -194,17 +250,32 @@ export class PlatformService {
       throw new NotFoundException('Platform account not found');
     }
 
+    // Encrypt tokens if provided
+    const encryptedAccessToken = data.accessToken
+      ? await this.encryptToken(data.accessToken, account.tenantId)
+      : undefined;
+    const encryptedRefreshToken = data.refreshToken
+      ? await this.encryptToken(data.refreshToken, account.tenantId)
+      : undefined;
+
+    const updateData: any = {
+      username: data.username,
+      displayName: data.displayName || null,
+      profileUrl: data.profileUrl || null,
+      cookies: data.cookies || null,
+      status: data.status as any,
+    };
+
+    if (encryptedAccessToken !== undefined) {
+      updateData.accessToken = encryptedAccessToken;
+    }
+    if (encryptedRefreshToken !== undefined) {
+      updateData.refreshToken = encryptedRefreshToken;
+    }
+
     const updated = await this.prisma.platformAccount.update({
       where: { id },
-      data: {
-        username: data.username,
-        displayName: data.displayName || null,
-        profileUrl: data.profileUrl || null,
-        accessToken: data.accessToken || null,
-        refreshToken: data.refreshToken || null,
-        cookies: data.cookies || null,
-        status: data.status as any,
-      },
+      data: updateData,
     });
 
     return {
@@ -217,8 +288,8 @@ export class PlatformService {
       username: updated.username || undefined,
       displayName: updated.displayName || undefined,
       profileUrl: updated.profileUrl || undefined,
-      accessToken: updated.accessToken || undefined,
-      refreshToken: updated.refreshToken || undefined,
+      accessToken: data.accessToken || account.accessToken, // Return unencrypted
+      refreshToken: data.refreshToken || account.refreshToken, // Return unencrypted
       expiresAt: updated.expiresAt || undefined,
       cookies: updated.cookies as any,
       status: updated.status as AccountStatus,
@@ -475,11 +546,16 @@ export class PlatformService {
 
     try {
       const newToken = await adapter.refreshAccessToken();
+
+      // Encrypt new token before storing
+      const encryptedToken = await this.encryptToken(newToken, tenantId);
+
       await this.prisma.platformAccount.update({
         where: { id: platformAccountId },
-        data: { accessToken: newToken },
+        data: { accessToken: encryptedToken },
       });
-      return { success: true, newToken };
+
+      return { success: true, newToken }; // Return unencrypted token
     } catch (error) {
       throw new BadRequestException('Failed to refresh token');
     }
@@ -555,6 +631,18 @@ export class PlatformService {
         return new LinkedInAdapter(account);
       case SocialPlatform.TWITTER:
         return new TwitterAdapter(account);
+      case SocialPlatform.TELEGRAM:
+        return new TelegramAdapter(account);
+      case SocialPlatform.YOUTUBE:
+        return new YouTubeAdapter(account);
+      case SocialPlatform.PINTEREST:
+        return new PinterestAdapter(account);
+      case SocialPlatform.REDDIT:
+        return new RedditAdapter(account);
+      case 'VK' as SocialPlatform:
+        return new VKAdapter(account);
+      case 'ASKFM' as SocialPlatform:
+        return new AskFmAdapter(account);
       default:
         throw new BadRequestException(`Platform ${account.platform} not supported`);
     }

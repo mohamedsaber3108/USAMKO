@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>USAMKO Token Capture</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>USAMKO</h1>
+      <p class="subtitle">Token Capture Extension</p>
+    </div>
+
+    <!-- Connection Status -->
+    <div class="status-card">
+      <div class="status-indicator" id="statusIndicator">
+        <span class="status-dot" id="statusDot"></span>
+        <span class="status-text" id="statusText">Disconnected</span>
+      </div>
+      <button class="btn btn-primary" id="connectBtn">Connect</button>
+    </div>
+
+    <!-- JWT Token Configuration -->
+    <div class="config-card" id="configCard">
+      <h3>Configuration</h3>
+      <div class="form-group">
+        <label for="jwtToken">JWT Token:</label>
+        <input type="password" id="jwtToken" placeholder="Paste your JWT token here">
+        <button class="btn btn-small" id="saveTokenBtn">Save</button>
+      </div>
+      <p class="help-text">Get your JWT token from USAMKO dashboard</p>
+    </div>
+
+    <!-- Google Maps Lead Collector -->
+    <div class="stats-card">
+      <h3>🗺️ Google Maps Lead Collector</h3>
+      <div class="stats-grid" id="mapsStatsGrid">
+        <div class="stat-item">
+          <span class="stat-value" id="leadsCollected">0</span>
+          <span class="stat-label">Leads</span>
+        </div>
+        <div class="stat-item">
+          <button class="btn btn-primary" id="exportCsvBtn">Export CSV</button>
+        </div>
+      </div>
+      <p class="help-text" id="mapsStatus">Search on Google Maps to collect leads</p>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats-card">
+      <h3>Connected Accounts</h3>
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-item">
+          <span class="stat-value" id="totalAccounts">0</span>
+          <span class="stat-label">Total</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="connectedAccounts">0</span>
+          <span class="stat-label">Active</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="activity-card">
+      <h3>Recent Activity</h3>
+      <div class="activity-list" id="activityList">
+        <p class="empty-state">No activity yet</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <a href="https://github.com/mohamedsaber3108/USAMKO" target="_blank">GitHub</a>
+      <span>•</span>
+      <a href="#" id="clearLogsBtn">Clear Logs</a>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

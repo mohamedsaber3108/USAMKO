@@ -1,0 +1,83 @@
+{
+  "manifest_version": 3,
+  "name": "USAMKO - Lead Generation & Token Capture",
+  "version": "2.0.0",
+  "description": "Collect leads from Google Maps & LinkedIn. Capture OAuth tokens from social media platforms for automation",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "tabs",
+    "webRequest",
+    "downloads"
+  ],
+  "host_permissions": [
+    "https://*.facebook.com/*",
+    "https://*.instagram.com/*",
+    "https://*.linkedin.com/*",
+    "https://*.twitter.com/*",
+    "https://*.x.com/*",
+    "https://*.youtube.com/*",
+    "https://*.telegram.org/*",
+    "https://*.pinterest.com/*",
+    "https://*.reddit.com/*",
+    "https://*.vk.com/*",
+    "https://*.ask.fm/*",
+    "https://*.google.com/*"
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.facebook.com/*"],
+      "js": ["content/facebook.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://*.instagram.com/*"],
+      "js": ["content/instagram.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://*.linkedin.com/*"],
+      "js": ["content/linkedin.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://*.twitter.com/*", "https://*.x.com/*"],
+      "js": ["content/twitter.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://*.youtube.com/*"],
+      "js": ["content/youtube.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://*.telegram.org/*"],
+      "js": ["content/telegram.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://*.google.com/maps/*"],
+      "js": ["content/google-maps.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

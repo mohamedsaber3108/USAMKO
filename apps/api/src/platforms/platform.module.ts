@@ -2,6 +2,7 @@
 
 import { Module } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { SecurityModule } from '../security/security.module';
 import { PlatformService } from './platform.service';
 import { PlatformController } from './platform.controller';
 import { FacebookAdapter } from './adapters/facebook.adapter';
@@ -10,7 +11,7 @@ import { LinkedInAdapter } from './adapters/linkedin.adapter';
 import { TwitterAdapter } from './adapters/twitter.adapter';
 
 @Module({
-  imports: [],
+  imports: [SecurityModule],
   controllers: [PlatformController],
   providers: [
     PlatformService,

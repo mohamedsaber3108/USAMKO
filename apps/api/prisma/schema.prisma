@@ -16,10 +16,16 @@ model Tenant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users            User[]
-  workflows        Workflow[]
-  platformAccounts PlatformAccount[]
-  campaigns        Campaign[]
+  users              User[]
+  workflows          Workflow[]
+  platformAccounts   PlatformAccount[]
+  campaigns          Campaign[]
+  companies          Company[]
+  leads              Lead[]
+  leadEnrichments    LeadEnrichment[]
+  campaignExecutions CampaignExecution[]
+  campaignTargets    CampaignTarget[]
+  campaignMessages   CampaignMessage[]
 
   @@map("tenants")
 }
@@ -117,9 +123,180 @@ model Campaign {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  tenant  Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  account PlatformAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  tenant     Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account    PlatformAccount     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  executions CampaignExecution[]
+  targets    CampaignTarget[]
 
   @@map("campaigns")
+}
+
+model Company {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String
+  domain      String?
+  website     String?
+  industry    String?
+  size        String?
+  location    String?
+  country     String?
+  city        String?
+  description String?
+  logoUrl     String?
+  linkedinUrl String?
+  twitterUrl  String?
+  facebookUrl String?
+  phone       String?
+  email       String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leads  Lead[]
+
+  @@unique([tenantId, domain])
+  @@index([tenantId, name])
+  @@index([tenantId, industry])
+  @@map("companies")
+}
+
+model Lead {
+  id             String   @id @default(uuid())
+  tenantId       String
+  companyId      String?
+  firstName      String?
+  lastName       String?
+  fullName       String?
+  title          String?
+  email          String?
+  phone          String?
+  linkedinUrl    String?
+  twitterUrl     String?
+  facebookUrl    String?
+  instagramUrl   String?
+  location       String?
+  country        String?
+  city           String?
+  bio            String?
+  profilePicture String?
+  source         String
+  sourceUrl      String?
+  status         String   @default("new")
+  score          Int?
+  tags           String[]
+  customFields   Json?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  company     Company?          @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  enrichments LeadEnrichment[]
+  targets     CampaignTarget[]
+
+  @@unique([tenantId, linkedinUrl])
+  @@index([tenantId, email])
+  @@index([tenantId, source])
+  @@index([tenantId, status])
+  @@index([tenantId, score])
+  @@map("leads")
+}
+
+model LeadEnrichment {
+  id          String   @id @default(uuid())
+  leadId      String
+  tenantId    String
+  provider    String
+  type        String
+  data        Json
+  confidence  Float?
+  status      String   @default("completed")
+  error       String?
+  metadata    Json?
+  enrichedAt  DateTime @default(now())
+
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, provider])
+  @@index([tenantId, provider])
+  @@map("lead_enrichments")
+}
+
+model CampaignExecution {
+  id          String    @id @default(uuid())
+  campaignId  String
+  tenantId    String
+  status      String    @default("pending")
+  totalLeads  Int       @default(0)
+  processed   Int       @default(0)
+  sent        Int       @default(0)
+  failed      Int       @default(0)
+  skipped     Int       @default(0)
+  results     Json?
+  error       String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  campaign Campaign          @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  tenant   Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  messages CampaignMessage[]
+
+  @@index([campaignId, status])
+  @@index([tenantId, status])
+  @@map("campaign_executions")
+}
+
+model CampaignTarget {
+  id         String   @id @default(uuid())
+  campaignId String
+  leadId     String
+  tenantId   String
+  status     String   @default("pending")
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  campaign Campaign          @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  lead     Lead              @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  tenant   Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  messages CampaignMessage[]
+
+  @@unique([campaignId, leadId])
+  @@index([campaignId, status])
+  @@map("campaign_targets")
+}
+
+model CampaignMessage {
+  id          String    @id @default(uuid())
+  executionId String
+  targetId    String
+  tenantId    String
+  platform    String
+  content     String
+  status      String    @default("pending")
+  externalId  String?
+  response    Json?
+  error       String?
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  readAt      DateTime?
+  repliedAt   DateTime?
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  execution CampaignExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  target    CampaignTarget    @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  tenant    Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([executionId, status])
+  @@index([targetId, platform])
+  @@index([tenantId, status])
+  @@map("campaign_messages")
 }
