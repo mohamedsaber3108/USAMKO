@@ -34,7 +34,8 @@ export class SchedulerController {
   @Post()
   @Roles(UserRole.ADMIN, UserRole.USER)
   createSchedule(@Body() dto: { workflowId: string; cronExpression: string; enabled?: boolean }) {
-    return this.schedulerService['createSchedule'](dto.workflowId, dto.cronExpression);
+    const tenantId = 'default_tenant_id'; // In production, get from auth context
+    return this.schedulerService['createSchedule'](tenantId, dto.workflowId, dto.cronExpression);
   }
 
   @Patch(':id')

@@ -130,7 +130,7 @@ export class StorageService {
 
     return {
       fileId: mediaFile.id,
-      fileName: mediaFile.originalName,
+      fileName: mediaFile.filename,
       presignedUrl,
       expiresAt: new Date(Date.now() + 3600000),
     };
@@ -239,17 +239,13 @@ export class StorageService {
       data: { metadata },
       select: {
         id: true,
-        fileName: true,
-        originalName: true,
+        filename: true,
         mimeType: true,
-        fileSize: true,
-        storagePath: true,
-        storageType: true,
+        size: true,
+        key: true,
+        url: true,
+        bucket: true,
         metadata: true,
-        isImage: true,
-        width: true,
-        height: true,
-        thumbnailUrl: true,
         createdAt: true,
       },
     });

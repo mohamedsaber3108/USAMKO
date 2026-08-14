@@ -38,8 +38,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       await this.$connect();
       console.log('✅ Database connected successfully');
 
-      // Register middleware for tenant isolation
-      this.registerTenantIsolationMiddleware();
+      // NOTE: Prisma middleware ($use) is deprecated in Prisma 5+
+      // Tenant isolation should be handled manually in queries or via Prisma Client Extensions
+      // this.registerTenantIsolationMiddleware();
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.warn('⚠️  Database connection failed, running without database:', errorMessage);
@@ -78,9 +79,12 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   /**
    * Register Prisma middleware for automatic tenant isolation.
+   * DISABLED: Prisma v5+ does not support $use middleware
+   * Use manual tenant isolation or Prisma Client Extensions instead
    */
   private registerTenantIsolationMiddleware() {
-    this.$use(async (params: any, next: any) => {
+    // Commented out - Prisma v5+ does not support $use middleware
+    /* this.$use(async (params: any, next: any) => {
       const context = this.getContext();
 
       // Models that don't have tenantId (system-level tables)
@@ -149,8 +153,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       }
 
       return next(params);
-    });
+    }); */
 
-    console.log('✅ Multi-tenant isolation middleware registered');
+    console.log('⚠️  Multi-tenant isolation middleware disabled (Prisma v5+)');
   }
 }

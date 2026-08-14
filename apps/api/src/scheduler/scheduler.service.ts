@@ -41,7 +41,7 @@ export class SchedulerService {
         await this.workflowService.executeWorkflow(schedule.workflowId);
 
         // Update last run time
-        const nextRunAt = this.calculateNextRun(schedule.cronExpression);
+        const nextRunAt = this.calculateNextRun(schedule.cronExpr);
         await this.prisma.workflowSchedule.update({
           where: { id: schedule.id },
           data: {
@@ -61,7 +61,7 @@ export class SchedulerService {
   /**
    * Calculate next run time based on cron expression
    */
-  private calculateNextRun(cronExpression: string): Date {
+  private calculateNextRun(cronExpr: string): Date {
     // Simple implementation - in production, use a cron parser library
     // For now, add 1 hour to current time
     const nextRun = new Date();
@@ -73,15 +73,17 @@ export class SchedulerService {
    * Create a new schedule
    */
   async createSchedule(
+    tenantId: string,
     workflowId: string,
-    cronExpression: string,
+    cronExpr: string,
   ) {
-    const nextRunAt = this.calculateNextRun(cronExpression);
+    const nextRunAt = this.calculateNextRun(cronExpr);
 
     return this.prisma.workflowSchedule.create({
       data: {
+        tenantId,
         workflowId,
-        cronExpression,
+        cronExpr,
         nextRunAt,
         enabled: true,
       },
@@ -91,13 +93,13 @@ export class SchedulerService {
   /**
    * Update an existing schedule
    */
-  async updateSchedule(id: string, cronExpression: string) {
-    const nextRunAt = this.calculateNextRun(cronExpression);
+  async updateSchedule(id: string, cronExpr: string) {
+    const nextRunAt = this.calculateNextRun(cronExpr);
 
     return this.prisma.workflowSchedule.update({
       where: { id },
       data: {
-        cronExpression,
+        cronExpr,
         nextRunAt,
       },
     });

@@ -97,7 +97,7 @@ export class SettingsService {
    */
   async getTeamMembers(tenantId: string) {
     const members = await this.prisma.teamMember.findMany({
-      where: { tenantId, status: 'active' },
+      where: { tenantId },
       include: {
         user: {
           select: {
@@ -157,13 +157,6 @@ export class SettingsService {
     });
 
     if (existingMember) {
-      if (existingMember.status === 'removed') {
-        // Reactivate the member
-        await this.prisma.teamMember.update({
-          where: { id: existingMember.id },
-          data: { status: 'active', joinedAt: new Date() },
-        });
-      }
       return {
         message: 'User is already a team member',
         member: existingMember,
@@ -177,7 +170,6 @@ export class SettingsService {
         userId: user.id,
         role,
         invitedBy,
-        status: 'active',
         joinedAt: new Date(),
       },
       include: {
@@ -197,8 +189,8 @@ export class SettingsService {
         tenantId,
         userId: invitedBy,
         action: 'invite',
-        targetType: 'user',
-        targetId: user.id,
+        entity: 'user',
+        entityId: user.id,
         details: { email, role },
       },
     });
@@ -246,8 +238,8 @@ export class SettingsService {
         tenantId,
         userId: updatedBy,
         action: 'update_role',
-        targetType: 'user',
-        targetId: member.userId,
+        entity: 'user',
+        entityId: member.userId,
         details: { newRole: role },
       },
     });
@@ -274,9 +266,8 @@ export class SettingsService {
       throw new NotFoundException('Team member not found');
     }
 
-    await this.prisma.teamMember.update({
+    await this.prisma.teamMember.delete({
       where: { id: memberId },
-      data: { status: 'removed' },
     });
 
     // Log activity
@@ -285,8 +276,8 @@ export class SettingsService {
         tenantId,
         userId: removedBy,
         action: 'remove',
-        targetType: 'user',
-        targetId: member.userId,
+        entity: 'user',
+        entityId: member.userId,
       },
     });
 

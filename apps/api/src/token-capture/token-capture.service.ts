@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma.service';
 import { EncryptionService } from '../security/encryption.service';
 import { AuditService } from '../audit/audit.service';
 import { CaptureTokenDto, TokenCaptureResponseDto } from './dto/capture-token.dto';
-import { SocialPlatform, AccountStatus } from '@prisma/client';
+import { SocialPlatform, AccountStatus } from '../platforms/platform.model';
 
 /**
  * Token Capture Service

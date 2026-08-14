@@ -44,11 +44,29 @@ export class CampaignService {
     // Validate content based on campaign type
     this.validateCampaignContent(dto.type, dto.config as unknown as CampaignConfig);
 
+    // Get first platform account for the campaign
+    const platforms = (dto.config as any).platforms || [];
+    const firstPlatform = platforms[0];
+    const platformAccount = await this.prisma.platformAccount.findFirst({
+      where: {
+        tenantId,
+        platform: firstPlatform,
+        status: 'active',
+      },
+    });
+
+    if (!platformAccount) {
+      throw new BadRequestException(
+        `No active platform account found for ${firstPlatform}`,
+      );
+    }
+
     // Create campaign
     const campaign = await this.prisma.campaign.create({
       data: {
         tenantId,
         userId,
+        accountId: platformAccount.id,
         name: dto.name,
         description: dto.description,
         type: dto.type,

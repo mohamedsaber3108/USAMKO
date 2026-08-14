@@ -135,10 +135,10 @@ export class VKAdapter {
   }
 
   /**
-   * Get post by ID
+   * Get post by ID (format: "ownerId_postId")
    */
-  async getPost(ownerId: number, postId: number): Promise<any> {
-    const posts = `${ownerId}_${postId}`;
+  async getPost(postId: string): Promise<any> {
+    const posts = postId; // VK expects format "ownerId_postId"
 
     return await this.makeRequest('wall.getById', {
       posts: posts,
@@ -146,14 +146,15 @@ export class VKAdapter {
   }
 
   /**
-   * Delete post
+   * Delete post (format: "ownerId_postId")
    */
-  async deletePost(ownerId: number, postId: number): Promise<void> {
-    this.logger.log(`Deleting VK post: ${ownerId}_${postId}`);
+  async deletePost(postId: string): Promise<void> {
+    const [ownerId, pId] = postId.split('_');
+    this.logger.log(`Deleting VK post: ${postId}`);
 
     await this.makeRequest('wall.delete', {
-      owner_id: ownerId,
-      post_id: postId,
+      owner_id: parseInt(ownerId, 10),
+      post_id: parseInt(pId, 10),
     });
   }
 
@@ -397,19 +398,14 @@ export class VKAdapter {
    * Get post by ID (for USAMKO platform adapter interface)
    */
   async getPostById(postId: string): Promise<any> {
-    // postId format: ownerId_postId
-    const [ownerId, pId] = postId.split('_').map((n) => parseInt(n, 10));
-
-    return await this.getPost(ownerId, pId);
+    return await this.getPost(postId);
   }
 
   /**
    * Delete post (for USAMKO platform adapter interface)
    */
   async deletePostById(postId: string): Promise<void> {
-    const [ownerId, pId] = postId.split('_').map((n) => parseInt(n, 10));
-
-    await this.deletePost(ownerId, pId);
+    await this.deletePost(postId);
   }
 
   /**

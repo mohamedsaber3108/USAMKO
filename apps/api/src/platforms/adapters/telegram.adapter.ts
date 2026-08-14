@@ -400,7 +400,7 @@ export class TelegramAdapter {
   /**
    * List posts (not supported by Telegram Bot API)
    */
-  async listPosts(): Promise<any[]> {
+  async listPosts(options?: { limit?: number; after?: string }): Promise<any[]> {
     // Telegram Bot API doesn't support listing messages
     throw new Error('List messages not supported by Telegram Bot API');
   }

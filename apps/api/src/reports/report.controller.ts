@@ -183,7 +183,8 @@ export class ReportController {
   @ApiResponse({ status: 201, description: 'Report scheduled successfully' })
   async scheduleReport(@Body() dto: ScheduleReportDto) {
     const tenantId = 'default_tenant_id'; // In production, get from auth context
-    return this.reportService.scheduleReport(tenantId, {
+    const userId = 'default_user_id'; // In production, get from auth context
+    return this.reportService.scheduleReport(tenantId, userId, {
       ...dto,
       enabled: dto.enabled ?? true,
     });

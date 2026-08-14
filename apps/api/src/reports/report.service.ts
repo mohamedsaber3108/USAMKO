@@ -182,19 +182,16 @@ export class ReportService {
     // Get campaign executions
     const executions = await this.prisma.campaignExecution.findMany({
       where: { campaignId },
-      include: {
-        workflow: true,
-      },
     });
 
     // Calculate statistics
     const totalPosts = executions.length;
     const totalEngagement = executions.reduce(
-      (sum, exec) => sum + (Number((exec.output as any)?.engagement) || 0),
+      (sum, exec) => sum + (Number((exec.results as any)?.engagement) || 0),
       0,
     );
     const totalConversions = executions.reduce(
-      (sum, exec) => sum + (Number((exec.output as any)?.conversions) || 0),
+      (sum, exec) => sum + (Number((exec.results as any)?.conversions) || 0),
       0,
     );
     const totalCost = Number((campaign.config as any)?.budget) || 0;
@@ -206,7 +203,7 @@ export class ReportService {
       where: { tenantId },
       select: {
         platform: true,
-        postsRel: {
+        posts: {
           where: {
             createdAt: {
               gte: dateRange?.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -222,7 +219,7 @@ export class ReportService {
 
     const platformStats = platformBreakdown.map((account) => ({
       platform: account.platform,
-      posts: account.postsRel.length,
+      posts: account.posts.length,
       engagement: Math.floor(Math.random() * 1000),
       conversions: Math.floor(Math.random() * 50),
     }));
@@ -397,7 +394,7 @@ export class ReportService {
       where: { tenantId },
       select: {
         platform: true,
-        postsRel: {
+        posts: {
           where: {
             createdAt: {
               gte: dateRange?.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -413,7 +410,7 @@ export class ReportService {
 
     const platformStats = platformBreakdown.map((account) => ({
       platform: account.platform,
-      posts: account.postsRel.length,
+      posts: account.posts.length,
       engagement: Math.floor(Math.random() * 1000),
       engagementRate: Math.random() * 10,
     }));
@@ -598,20 +595,38 @@ export class ReportService {
    */
   async scheduleReport(
     tenantId: string,
+    userId: string,
     config: ScheduleConfig,
   ): Promise<any> {
-    return this.prisma.reportSchedule.create({
+    // First create a Report
+    const report = await this.prisma.report.create({
       data: {
         tenantId,
+        userId,
         name: config.name,
         type: config.type.toUpperCase() as any,
-        platform: config.platform || undefined,
-        campaignId: config.campaignId || undefined,
+        format: config.format.toUpperCase() as any,
+        status: 'PENDING' as any,
+        config: {
+          platform: config.platform,
+          campaignId: config.campaignId,
+          recipients: config.recipients,
+        },
+      },
+    });
+
+    // Then create the schedule
+    return this.prisma.reportSchedule.create({
+      data: {
+        reportId: report.id,
+        tenantId,
         frequency: config.frequency.toUpperCase() as any,
-        recipients: config.recipients,
         format: config.format.toUpperCase() as any,
         enabled: config.enabled,
         nextRunAt: this.calculateNextRun(config.frequency),
+        config: {
+          recipients: config.recipients,
+        },
       },
     });
   }
@@ -733,14 +748,21 @@ export class ReportService {
           ? await this.exportToPDF(reportData, reportType)
           : await this.exportToExcel(reportData, reportType);
 
-        // Save report
+        // Save report (get userId from schedule's report if exists)
+        const reportWithUser = await this.prisma.report.findUnique({
+          where: { id: schedule.reportId },
+          select: { userId: true },
+        });
+
         await this.prisma.report.create({
           data: {
             tenantId: schedule.tenantId,
+            userId: reportWithUser?.userId || 'system',
             type: reportType,
             name: `${reportName} - ${new Date().toLocaleDateString()}`,
             data: reportData,
             format: schedule.format,
+            config: {},
             status: 'COMPLETED' as any,
           },
         });
@@ -752,14 +774,13 @@ export class ReportService {
           data: {
             lastRunAt: now,
             nextRunAt,
-            lastResult: 'success',
           },
         });
       } catch (error) {
         this.prisma.reportSchedule.update({
           where: { id: schedule.id },
           data: {
-            lastResult: `failed: ${error.message}`,
+            lastRunAt: now,
           },
         });
       }

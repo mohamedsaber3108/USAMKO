@@ -355,15 +355,14 @@ export class PlatformService {
     await this.prisma.platformPost.create({
       data: {
         id: `post_${Date.now()}`,
+        tenantId,
         platformAccountId,
-        platformPostId: response.platformPostId || response.id,
+        externalId: response.platformPostId || response.id,
         content: response.content,
-        mediaUrl: response.mediaUrl || null,
-        mediaType: response.mediaType || null,
+        mediaUrls: response.mediaUrl ? [response.mediaUrl] : [],
         status: response.status,
-        error: response.error || null,
-        publishedAt: response.publishedAt || null,
         metadata: response.metadata || null,
+        postedAt: response.publishedAt || null,
       },
     });
 
@@ -473,7 +472,7 @@ export class PlatformService {
     await this.prisma.platformPost.deleteMany({
       where: {
         platformAccountId,
-        platformPostId: postId,
+        externalId: postId,
       },
     });
   }
