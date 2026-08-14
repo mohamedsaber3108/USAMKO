@@ -11,14 +11,17 @@ export class SettingsService {
   /**
    * Get or create user settings
    */
-  async getOrCreateSettings(userId: string) {
+  async getOrCreateSettings(userId: string, tenantId: string) {
     let settings = await this.prisma.userSetting.findUnique({
       where: { userId },
     });
 
     if (!settings) {
       settings = await this.prisma.userSetting.create({
-        data: { userId },
+        data: {
+          userId,
+          tenantId,
+        },
       });
     }
 

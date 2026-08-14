@@ -433,8 +433,9 @@ model Notification {
 model CredentialVault {
   id                String   @id @default(uuid())
   tenantId          String
-  platform          String
-  encryptedData     String
+  userId            String?
+  key               String
+  value             String
   encryptionVersion String   @default("v1")
   metadata          Json?
   createdAt         DateTime @default(now())
@@ -442,8 +443,9 @@ model CredentialVault {
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  @@unique([tenantId, platform])
+  @@unique([tenantId, userId, key])
   @@index([tenantId])
+  @@index([userId])
   @@map("credential_vaults")
 }
 
