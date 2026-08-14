@@ -379,4 +379,11 @@ export class YouTubeAdapter {
     const result = await this.listVideos(options?.limit || 10);
     return result.items || [];
   }
+
+  /**
+   * Refresh access token
+   */
+  async refreshAccessToken?(): Promise<string> {
+    throw new Error('Token refresh not implemented for YouTube adapter');
+  }
 }

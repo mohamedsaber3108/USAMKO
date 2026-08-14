@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.1109.0",
     "@aws-sdk/client-ses": "^3.1109.0",
     "@nestjs/axios": "^4.0.1",
     "@nestjs/bull": "^11.0.4",

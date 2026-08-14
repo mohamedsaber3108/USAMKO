@@ -378,4 +378,11 @@ export class AskFmAdapter {
       reason: reason,
     });
   }
+
+  /**
+   * Refresh access token
+   */
+  async refreshAccessToken?(): Promise<string> {
+    throw new Error('Token refresh not implemented for Ask.fm adapter');
+  }
 }

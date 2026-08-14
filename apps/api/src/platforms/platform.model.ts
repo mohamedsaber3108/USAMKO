@@ -34,7 +34,9 @@ export interface PlatformAccount {
   refreshToken?: string;
   expiresAt?: Date;
   cookies?: any;
+  metadata?: any;
   status: AccountStatus;
+  followers?: number;
   createdAt: Date;
   updatedAt: Date;
 }

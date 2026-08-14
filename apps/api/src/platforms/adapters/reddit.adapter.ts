@@ -421,4 +421,11 @@ export class RedditAdapter {
     const result = await this.getUserPosts(this.username, options?.limit || 10);
     return result.data?.children || [];
   }
+
+  /**
+   * Refresh access token
+   */
+  async refreshAccessToken?(): Promise<string> {
+    throw new Error('Token refresh not implemented for Reddit adapter');
+  }
 }

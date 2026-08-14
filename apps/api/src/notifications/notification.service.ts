@@ -34,7 +34,7 @@ export class NotificationService {
         title: true,
         message: true,
         read: true,
-        readAt: true,
+        // readAt: true,
         data: true,
         createdAt: true,
       },
@@ -72,7 +72,7 @@ export class NotificationService {
           title: true,
           message: true,
           read: true,
-          readAt: true,
+          // readAt: true,
           data: true,
           createdAt: true,
         },
@@ -116,14 +116,13 @@ export class NotificationService {
 
     const updated = await this.prisma.notification.update({
       where: { id: notificationId },
-      data: { read: true, readAt: new Date() },
+      data: { read: true },
       select: {
         id: true,
         type: true,
         title: true,
         message: true,
         read: true,
-        readAt: true,
         data: true,
         createdAt: true,
       },
@@ -138,7 +137,7 @@ export class NotificationService {
   async markAllAsRead(userId: string, tenantId: string) {
     await this.prisma.notification.updateMany({
       where: { userId, tenantId, read: false },
-      data: { read: true, readAt: new Date() },
+      data: { read: true },
     });
 
     return { message: 'All notifications marked as read' };

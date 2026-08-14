@@ -296,4 +296,11 @@ export class PinterestAdapter {
   async unfollowUser(userId: string): Promise<void> {
     await this.makeRequest('DELETE', `/user_account/following/${userId}`);
   }
+
+  /**
+   * Refresh access token
+   */
+  async refreshAccessToken?(): Promise<string> {
+    throw new Error('Token refresh not implemented for Pinterest adapter');
+  }
 }

@@ -404,4 +404,12 @@ export class TelegramAdapter {
     // Telegram Bot API doesn't support listing messages
     throw new Error('List messages not supported by Telegram Bot API');
   }
+
+  /**
+   * Refresh access token (not required for Telegram bots)
+   */
+  async refreshAccessToken?(): Promise<string> {
+    // Telegram bot tokens don't expire
+    throw new Error('Token refresh not required for Telegram bots');
+  }
 }

@@ -423,4 +423,11 @@ export class VKAdapter {
 
     return result.items || [];
   }
+
+  /**
+   * Refresh access token
+   */
+  async refreshAccessToken?(): Promise<string> {
+    throw new Error('Token refresh not implemented for VK adapter');
+  }
 }
