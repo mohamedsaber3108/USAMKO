@@ -16,17 +16,29 @@ model Tenant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users              User[]
-  workflows          Workflow[]
-  platformAccounts   PlatformAccount[]
-  campaigns          Campaign[]
-  companies          Company[]
-  leads              Lead[]
-  leadEnrichments    LeadEnrichment[]
-  campaignExecutions CampaignExecution[]
-  campaignTargets    CampaignTarget[]
-  campaignMessages   CampaignMessage[]
-  auditLogs          AuditLog[]
+  users                User[]
+  workflows            Workflow[]
+  platformAccounts     PlatformAccount[]
+  campaigns            Campaign[]
+  companies            Company[]
+  leads                Lead[]
+  leadEnrichments      LeadEnrichment[]
+  campaignExecutions   CampaignExecution[]
+  campaignTargets      CampaignTarget[]
+  campaignMessages     CampaignMessage[]
+  auditLogs            AuditLog[]
+  notifications        Notification[]
+  credentialVaults     CredentialVault[]
+  mediaFiles           MediaFile[]
+  platformPosts        PlatformPost[]
+  reports              Report[]
+  reportSchedules      ReportSchedule[]
+  teamMembers          TeamMember[]
+  teamActivityLogs     TeamActivityLog[]
+  userSettings         UserSetting[]
+  webhookSubscriptions WebhookSubscription[]
+  webhookLogs          WebhookLog[]
+  workflowSchedules    WorkflowSchedule[]
 
   @@map("tenants")
 }
@@ -43,13 +55,19 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  tenant               Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  workflows            Workflow[]
-  campaigns            Campaign[]
-  apiKeys              ApiKey[]
-  auditLogs            AuditLog[]
-  emailVerifications   EmailVerification[]
-  passwordResets       PasswordReset[]
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workflows          Workflow[]
+  campaigns          Campaign[]
+  apiKeys            ApiKey[]
+  auditLogs          AuditLog[]
+  emailVerifications EmailVerification[]
+  passwordResets     PasswordReset[]
+  notifications      Notification[]
+  mediaFiles         MediaFile[]
+  reports            Report[]
+  teamMembers        TeamMember[]
+  teamActivityLogs   TeamActivityLog[]
+  userSetting        UserSetting?
 
   @@unique([tenantId, email])
   @@map("users")
@@ -71,6 +89,7 @@ model Workflow {
   tenant     Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   executions WorkflowExecution[]
+  schedule   WorkflowSchedule?
 
   @@map("workflows")
 }
@@ -106,8 +125,9 @@ model PlatformAccount {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   campaigns Campaign[]
+  posts     PlatformPost[]
 
   @@unique([tenantId, platform, username])
   @@map("platform_accounts")
@@ -119,6 +139,7 @@ model Campaign {
   userId      String
   accountId   String
   name        String
+  description String?
   type        String
   status      String    @default("draft")
   config      Json
@@ -380,4 +401,252 @@ model PasswordReset {
   @@index([userId])
   @@index([token])
   @@map("password_resets")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  tenantId  String
+  type      String
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  data      Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([tenantId, createdAt])
+  @@map("notifications")
+}
+
+model CredentialVault {
+  id                String   @id @default(uuid())
+  tenantId          String
+  platform          String
+  encryptedData     String
+  encryptionVersion String   @default("v1")
+  metadata          Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, platform])
+  @@index([tenantId])
+  @@map("credential_vaults")
+}
+
+model MediaFile {
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String?
+  filename  String
+  mimeType  String
+  size      Int
+  url       String
+  bucket    String   @default("default")
+  key       String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([userId])
+  @@map("media_files")
+}
+
+model PlatformPost {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  platformAccountId  String
+  externalId         String?
+  content            String
+  mediaUrls          String[]
+  status             String   @default("published")
+  likes              Int      @default(0)
+  comments           Int      @default(0)
+  shares             Int      @default(0)
+  views              Int      @default(0)
+  engagementRate     Float?
+  postedAt           DateTime?
+  scheduledAt        DateTime?
+  metadata           Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  platformAccount PlatformAccount @relation(fields: [platformAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([platformAccountId, externalId])
+  @@index([tenantId, createdAt])
+  @@index([platformAccountId, status])
+  @@map("platform_posts")
+}
+
+model Report {
+  id          String    @id @default(uuid())
+  tenantId    String
+  userId      String
+  name        String
+  description String?
+  type        String
+  config      Json
+  data        Json?
+  status      String    @default("pending")
+  generatedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant    Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schedules ReportSchedule[]
+
+  @@index([tenantId, createdAt])
+  @@index([userId])
+  @@map("reports")
+}
+
+model ReportSchedule {
+  id         String    @id @default(uuid())
+  reportId   String
+  tenantId   String
+  frequency  String
+  config     Json?
+  enabled    Boolean   @default(true)
+  lastRunAt  DateTime?
+  nextRunAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, enabled])
+  @@index([nextRunAt])
+  @@map("report_schedules")
+}
+
+model TeamMember {
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String
+  role      String   @default("member")
+  permissions String[]
+  invitedBy String?
+  joinedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([tenantId])
+  @@index([userId])
+  @@map("team_members")
+}
+
+model TeamActivityLog {
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String?
+  action    String
+  entity    String?
+  entityId  String?
+  details   Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([userId])
+  @@map("team_activity_logs")
+}
+
+model UserSetting {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  tenantId  String
+  theme     String   @default("light")
+  language  String   @default("en")
+  timezone  String   @default("UTC")
+  notifications Json?
+  preferences   Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("user_settings")
+}
+
+model WebhookSubscription {
+  id          String   @id @default(uuid())
+  tenantId    String
+  url         String
+  events      String[]
+  secret      String
+  enabled     Boolean  @default(true)
+  description String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  logs   WebhookLog[]
+
+  @@index([tenantId, enabled])
+  @@map("webhook_subscriptions")
+}
+
+model WebhookLog {
+  id             String    @id @default(uuid())
+  subscriptionId String
+  tenantId       String
+  event          String
+  payload        Json
+  response       Json?
+  statusCode     Int?
+  success        Boolean   @default(false)
+  error          String?
+  attempts       Int       @default(1)
+  sentAt         DateTime  @default(now())
+
+  subscription WebhookSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  tenant       Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId, sentAt])
+  @@index([tenantId, sentAt])
+  @@map("webhook_logs")
+}
+
+model WorkflowSchedule {
+  id         String    @id @default(uuid())
+  workflowId String
+  tenantId   String
+  cronExpr   String
+  enabled    Boolean   @default(true)
+  lastRunAt  DateTime?
+  nextRunAt  DateTime?
+  metadata   Json?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  workflow Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([workflowId])
+  @@index([tenantId, enabled])
+  @@index([nextRunAt])
+  @@map("workflow_schedules")
 }

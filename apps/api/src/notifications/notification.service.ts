@@ -33,7 +33,7 @@ export class NotificationService {
         type: true,
         title: true,
         message: true,
-        isRead: true,
+        read: true,
         readAt: true,
         data: true,
         createdAt: true,
@@ -57,7 +57,7 @@ export class NotificationService {
 
     const where: any = { userId, tenantId };
     if (unreadOnly) {
-      where.isRead = false;
+      where.read = false;
     }
 
     const [notifications, total] = await Promise.all([
@@ -71,7 +71,7 @@ export class NotificationService {
           type: true,
           title: true,
           message: true,
-          isRead: true,
+          read: true,
           readAt: true,
           data: true,
           createdAt: true,
@@ -94,7 +94,7 @@ export class NotificationService {
    */
   async getUnreadCount(userId: string, tenantId: string) {
     return this.prisma.notification.count({
-      where: { userId, tenantId, isRead: false },
+      where: { userId, tenantId, read: false },
     });
   }
 
@@ -110,19 +110,19 @@ export class NotificationService {
       throw new NotFoundException('Notification not found');
     }
 
-    if (notification.isRead) {
+    if (notification.read) {
       return notification;
     }
 
     const updated = await this.prisma.notification.update({
       where: { id: notificationId },
-      data: { isRead: true, readAt: new Date() },
+      data: { read: true, readAt: new Date() },
       select: {
         id: true,
         type: true,
         title: true,
         message: true,
-        isRead: true,
+        read: true,
         readAt: true,
         data: true,
         createdAt: true,
@@ -137,8 +137,8 @@ export class NotificationService {
    */
   async markAllAsRead(userId: string, tenantId: string) {
     await this.prisma.notification.updateMany({
-      where: { userId, tenantId, isRead: false },
-      data: { isRead: true, readAt: new Date() },
+      where: { userId, tenantId, read: false },
+      data: { read: true, readAt: new Date() },
     });
 
     return { message: 'All notifications marked as read' };
