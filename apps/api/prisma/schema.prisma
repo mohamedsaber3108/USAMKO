@@ -26,24 +26,30 @@ model Tenant {
   campaignExecutions CampaignExecution[]
   campaignTargets    CampaignTarget[]
   campaignMessages   CampaignMessage[]
+  auditLogs          AuditLog[]
 
   @@map("tenants")
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String
-  password  String
-  name      String
-  role      String   @default("user")
-  tenantId  String
-  metadata  Json?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(uuid())
+  email         String
+  password      String
+  name          String
+  role          String   @default("user")
+  tenantId      String
+  emailVerified Boolean  @default(false)
+  metadata      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  workflows Workflow[]
-  campaigns Campaign[]
+  tenant               Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workflows            Workflow[]
+  campaigns            Campaign[]
+  apiKeys              ApiKey[]
+  auditLogs            AuditLog[]
+  emailVerifications   EmailVerification[]
+  passwordResets       PasswordReset[]
 
   @@unique([tenantId, email])
   @@map("users")
@@ -299,4 +305,79 @@ model CampaignMessage {
   @@index([targetId, platform])
   @@index([tenantId, status])
   @@map("campaign_messages")
+}
+
+model ApiKey {
+  id          String    @id @default(uuid())
+  userId      String
+  key         String    @unique
+  name        String
+  description String?
+  permissions String[]
+  isActive    Boolean   @default(true)
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([key])
+  @@map("api_keys")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  tenantId  String?
+  userId    String?
+  action    String
+  entity    String?
+  entityId  String?
+  changes   Json?
+  error     String?
+  success   Boolean
+  ipAddress String?
+  userAgent String?
+  duration  Int?
+  timestamp DateTime @default(now())
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, timestamp])
+  @@index([userId, timestamp])
+  @@index([action])
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
+
+model EmailVerification {
+  id        String    @id @default(uuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("email_verifications")
+}
+
+model PasswordReset {
+  id        String    @id @default(uuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("password_resets")
 }
