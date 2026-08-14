@@ -58,6 +58,7 @@ model User {
   tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   workflows          Workflow[]
   campaigns          Campaign[]
+  platformAccounts   PlatformAccount[]
   apiKeys            ApiKey[]
   auditLogs          AuditLog[]
   emailVerifications EmailVerification[]
@@ -111,21 +112,27 @@ model WorkflowExecution {
 }
 
 model PlatformAccount {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   tenantId     String
+  userId       String?
   platform     String
   username     String
   displayName  String?
+  accountId    String?
+  accountName  String?
   profileUrl   String?
   accessToken  String?
   refreshToken String?
+  expiresAt    DateTime?
   cookies      Json?
   metadata     Json?
-  status       String   @default("active")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  status       String    @default("active")
+  followers    Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
   campaigns Campaign[]
   posts     PlatformPost[]
 
@@ -496,6 +503,7 @@ model Report {
   name        String
   description String?
   type        String
+  format      String    @default("JSON")
   config      Json
   data        Json?
   status      String    @default("pending")
@@ -517,6 +525,7 @@ model ReportSchedule {
   reportId   String
   tenantId   String
   frequency  String
+  format     String    @default("JSON")
   config     Json?
   enabled    Boolean   @default(true)
   lastRunAt  DateTime?

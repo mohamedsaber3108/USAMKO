@@ -29,7 +29,8 @@ export interface WebhookSubscription {
   url: string;
   events: string[];
   secret: string;
-  active: boolean;
+  enabled: boolean;
+  description?: string;
   metadata: any;
   createdAt: Date;
   updatedAt: Date;
@@ -37,16 +38,16 @@ export interface WebhookSubscription {
 
 export interface WebhookLog {
   id: string;
-  webhookId: string;
-  url: string;
+  subscriptionId: string;
+  tenantId: string;
   event: string;
   payload: any;
-  responseStatus: number | null;
-  responseBody: string | null;
+  response: any | null;
+  statusCode: number | null;
   success: boolean;
-  retryCount: number;
-  errorMessage: string | null;
-  createdAt: Date;
+  error: string | null;
+  attempts: number;
+  sentAt: Date;
 }
 
 @Injectable()
@@ -98,7 +99,7 @@ export class WebhookService {
         url,
         events: events as any,
         secret: webhookSecret,
-        active: true,
+        enabled: true,
         metadata: metadata || {},
       },
     }) as any;
@@ -135,7 +136,7 @@ export class WebhookService {
   async updateWebhook(
     tenantId: string,
     id: string,
-    data: Partial<{ url: string; events: string[]; active: boolean; metadata: any }>,
+    data: Partial<{ url: string; events: string[]; enabled: boolean; metadata: any }>,
   ): Promise<WebhookSubscription> {
     // Validate events if provided
     if (data.events) {
@@ -202,14 +203,14 @@ export class WebhookService {
       // Log the test
       await this.prisma.webhookLog.create({
         data: {
-          webhookId: webhook.id,
-          url: webhook.url,
+          subscriptionId: webhook.id,
+          tenantId: webhook.tenantId,
           event: 'test',
           payload: testPayload,
-          responseStatus: response.status,
-          responseBody,
+          statusCode: response.status,
+          response: { body: responseBody } as any,
           success: response.ok,
-          retryCount: 0,
+          attempts: 1,
         },
       });
 
@@ -222,15 +223,15 @@ export class WebhookService {
       // Log the failed test
       await this.prisma.webhookLog.create({
         data: {
-          webhookId: webhook.id,
-          url: webhook.url,
+          subscriptionId: webhook.id,
+          tenantId: webhook.tenantId,
           event: 'test',
           payload: testPayload,
-          responseStatus: null,
-          responseBody: error.message,
+          statusCode: null,
+          response: { body: error.message } as any,
           success: false,
-          retryCount: 0,
-          errorMessage: error.message,
+          attempts: 1,
+          error: error.message,
         },
       });
 
@@ -242,13 +243,17 @@ export class WebhookService {
    * Trigger a webhook for an event
    */
   async triggerWebhook(event: WebhookEvent, data: any, tenantId: string) {
-    const webhooks = await this.prisma.webhookSubscription.findMany({
+    const allWebhooks = await this.prisma.webhookSubscription.findMany({
       where: {
         tenantId,
-        active: true,
-        events: { array_contains: [event] } as any,
+        enabled: true,
       },
     });
+
+    // Filter webhooks that are subscribed to this event
+    const webhooks = allWebhooks.filter(w =>
+      Array.isArray(w.events) && w.events.includes(event)
+    );
 
     const payload: WebhookPayload = {
       event,
@@ -265,15 +270,15 @@ export class WebhookService {
   /**
    * Send webhook with retry logic
    */
-  private async sendWebhook(webhook: any, payload: WebhookPayload) {
-    const signature = this.generateSignature(JSON.stringify(payload), webhook.secret);
+  private async sendWebhook(subscription: any, payload: WebhookPayload) {
+    const signature = this.generateSignature(JSON.stringify(payload), subscription.secret);
 
     let lastError: string | null = null;
 
     // Retry logic with exponential backoff (3 attempts)
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        const response = await fetch(webhook.url, {
+        const response = await fetch(subscription.url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -287,14 +292,14 @@ export class WebhookService {
         // Log the webhook
         await this.prisma.webhookLog.create({
           data: {
-            webhookId: webhook.id,
-            url: webhook.url,
+            subscriptionId: subscription.id,
+            tenantId: subscription.tenantId,
             event: payload.event,
             payload: payload as any,
-            responseStatus: response.status,
-            responseBody,
+            statusCode: response.status,
+            response: { body: responseBody } as any,
             success: response.ok,
-            retryCount: attempt,
+            attempts: attempt + 1,
           },
         });
 
@@ -317,15 +322,15 @@ export class WebhookService {
     // All retries failed
     await this.prisma.webhookLog.create({
       data: {
-        webhookId: webhook.id,
-        url: webhook.url,
+        subscriptionId: subscription.id,
+        tenantId: subscription.tenantId,
         event: payload.event,
         payload: payload as any,
-        responseStatus: null,
-        responseBody: null,
+        response: null,
+        statusCode: null,
         success: false,
-        retryCount: 3,
-        errorMessage: lastError,
+        attempts: 3,
+        error: lastError,
       },
     });
   }
@@ -358,36 +363,36 @@ export class WebhookService {
     const failedLogs = await this.prisma.webhookLog.findMany({
       where: {
         success: false,
-        retryCount: { lt: 3 },
-        createdAt: {
+        attempts: { lt: 3 },
+        sentAt: {
           lt: new Date(Date.now() - 60 * 1000), // At least 1 minute ago
         },
       },
       include: {
-        webhook: true,
+        subscription: true,
       },
     });
 
     for (const log of failedLogs) {
       try {
-        const payload = typeof log.payload === 'string' 
-          ? JSON.parse(log.payload) 
+        const payload = typeof log.payload === 'string'
+          ? JSON.parse(log.payload)
           : log.payload;
 
-        await this.sendWebhook(log.webhook, payload);
+        await this.sendWebhook(log.subscription, payload);
       } catch (error) {
         // Log retry failure
         await this.prisma.webhookLog.create({
           data: {
-            webhookId: log.webhookId,
-            url: log.url,
+            subscriptionId: log.subscriptionId,
+            tenantId: log.tenantId,
             event: log.event,
             payload: log.payload,
-            responseStatus: null,
-            responseBody: error.message,
+            statusCode: null,
+            response: { error: error.message } as any,
             success: false,
-            retryCount: 3,
-            errorMessage: error.message,
+            attempts: 3,
+            error: error.message,
           },
         });
       }
@@ -397,10 +402,10 @@ export class WebhookService {
   /**
    * Get webhook logs
    */
-  async getWebhookLogs(webhookId: string, limit: number = 50) {
+  async getWebhookLogs(subscriptionId: string, limit: number = 50) {
     return this.prisma.webhookLog.findMany({
-      where: { webhookId },
-      orderBy: { createdAt: 'desc' },
+      where: { subscriptionId },
+      orderBy: { sentAt: 'desc' },
       take: limit,
     });
   }
@@ -411,12 +416,12 @@ export class WebhookService {
   async getTenantWebhookLogs(tenantId: string, limit: number = 50) {
     return this.prisma.webhookLog.findMany({
       where: {
-        webhook: { tenantId },
+        subscription: { tenantId },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { sentAt: 'desc' },
       take: limit,
       include: {
-        webhook: true,
+        subscription: true,
       },
     });
   }
@@ -430,25 +435,25 @@ export class WebhookService {
     });
 
     const active = await this.prisma.webhookSubscription.count({
-      where: { tenantId, active: true },
+      where: { tenantId, enabled: true },
     });
 
     const totalLogs = await this.prisma.webhookLog.count({
       where: {
-        webhook: { tenantId },
+        subscription: { tenantId },
       },
     });
 
     const successfulLogs = await this.prisma.webhookLog.count({
       where: {
-        webhook: { tenantId },
+        subscription: { tenantId },
         success: true,
       },
     });
 
     const failedLogs = await this.prisma.webhookLog.count({
       where: {
-        webhook: { tenantId },
+        subscription: { tenantId },
         success: false,
       },
     });

@@ -621,7 +621,7 @@ export class PlatformService {
   /**
    * Get adapter for a platform
    */
-  private getAdapterForPlatform(account: PlatformAccount) {
+  public getAdapterForPlatform(account: PlatformAccount) {
     switch (account.platform) {
       case SocialPlatform.FACEBOOK:
         return new FacebookAdapter(account);
@@ -646,5 +646,12 @@ export class PlatformService {
       default:
         throw new BadRequestException(`Platform ${account.platform} not supported`);
     }
+  }
+
+  /**
+   * Alias for getAdapterForPlatform (for backward compatibility)
+   */
+  public getPlatformAdapter(account: PlatformAccount) {
+    return this.getAdapterForPlatform(account);
   }
 }
