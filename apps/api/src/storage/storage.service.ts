@@ -77,29 +77,28 @@ export class StorageService {
         data: {
           tenantId,
           userId,
-          fileName,
-          originalName: file.originalname,
+          filename: file.originalname,
           mimeType: file.mimetype,
-          fileSize: file.size,
-          storagePath,
-          storageType: 'minio',
-          metadata: metadata || {},
-          tags: [],
-          isImage: file.mimetype.startsWith('image/'),
+          size: file.size,
+          key: storagePath,
+          bucket: this.bucketName,
+          url: `/${this.bucketName}/${storagePath}`,
+          metadata: {
+            originalName: file.originalname,
+            storageType: 'minio',
+            isImage: file.mimetype.startsWith('image/'),
+            ...metadata,
+          },
         },
         select: {
           id: true,
-          fileName: true,
-          originalName: true,
+          filename: true,
           mimeType: true,
-          fileSize: true,
-          storagePath: true,
-          storageType: true,
+          size: true,
+          key: true,
+          bucket: true,
+          url: true,
           metadata: true,
-          isImage: true,
-          width: true,
-          height: true,
-          thumbnailUrl: true,
           createdAt: true,
         },
       });
@@ -125,7 +124,7 @@ export class StorageService {
     // Generate presigned URL (expires in 1 hour)
     const presignedUrl = await this.minioClient.presignedGetObject(
       this.bucketName,
-      mediaFile.storagePath,
+      mediaFile.key,
       3600,
     );
 
@@ -151,17 +150,13 @@ export class StorageService {
         take: limit,
         select: {
           id: true,
-          fileName: true,
-          originalName: true,
+          filename: true,
           mimeType: true,
-          fileSize: true,
-          storagePath: true,
-          storageType: true,
+          size: true,
+          key: true,
+          bucket: true,
+          url: true,
           metadata: true,
-          isImage: true,
-          width: true,
-          height: true,
-          thumbnailUrl: true,
           createdAt: true,
         },
       }),
@@ -194,7 +189,7 @@ export class StorageService {
       // Delete from MinIO
       await this.minioClient.removeObject(
         this.bucketName,
-        mediaFile.storagePath,
+        mediaFile.key,
       );
 
       // Delete from database

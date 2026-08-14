@@ -711,31 +711,37 @@ export class ReportService {
 
     for (const schedule of schedules) {
       try {
+        // Parse config for report type and parameters
+        const config = schedule.config as any || {};
+        const reportType = config.type || 'ENGAGEMENT';
+        const campaignId = config.campaignId;
+        const platform = config.platform;
+        const reportName = config.name || 'Scheduled Report';
+
         // Generate report
         let reportData: any;
-        if (schedule.type === 'CAMPAIGN' && schedule.campaignId) {
-          reportData = await this.generateCampaignReport(schedule.tenantId, schedule.campaignId);
-        } else if (schedule.type === 'PLATFORM' && schedule.platform) {
-          reportData = await this.generatePlatformReport(schedule.tenantId, schedule.platform);
+        if (reportType === 'CAMPAIGN' && campaignId) {
+          reportData = await this.generateCampaignReport(schedule.tenantId, campaignId);
+        } else if (reportType === 'PLATFORM' && platform) {
+          reportData = await this.generatePlatformReport(schedule.tenantId, platform);
         } else {
           reportData = await this.generateEngagementReport(schedule.tenantId);
         }
 
         // Export to file
         const buffer = schedule.format === 'PDF'
-          ? await this.exportToPDF(reportData, schedule.type)
-          : await this.exportToExcel(reportData, schedule.type);
+          ? await this.exportToPDF(reportData, reportType)
+          : await this.exportToExcel(reportData, reportType);
 
         // Save report
         await this.prisma.report.create({
           data: {
             tenantId: schedule.tenantId,
-            type: schedule.type,
-            name: `${schedule.name} - ${new Date().toLocaleDateString()}`,
+            type: reportType,
+            name: `${reportName} - ${new Date().toLocaleDateString()}`,
             data: reportData,
             format: schedule.format,
             status: 'COMPLETED' as any,
-            downloadUrl: `/reports/${schedule.id}/download`,
           },
         });
 
