@@ -65,7 +65,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/auth/register', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -121,7 +121,7 @@ export default function RegisterPage() {
            <div className="space-y-3 mb-6">
              <button
                type="button"
-               onClick={() => window.location.href = 'http://localhost:3000/auth/google'}
+               onClick={() => window.location.href = '/api/auth/google'}
                className="w-full flex items-center justify-center gap-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
              >
                <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -147,7 +147,7 @@ export default function RegisterPage() {
 
              <button
                type="button"
-               onClick={() => window.location.href = 'http://localhost:3000/auth/github'}
+               onClick={() => window.location.href = '/api/auth/github'}
                className="w-full flex items-center justify-center gap-3 bg-gray-900 dark:bg-white rounded-lg py-3 px-4 hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
              >
                <svg className="w-5 h-5 text-white dark:text-gray-900" fill="currentColor" viewBox="0 0 24 24">

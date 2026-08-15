@@ -7,7 +7,7 @@ export default function Home() {
   const [apiMessage, setApiMessage] = useState('');
 
   useEffect(() => {
-    fetch('http://localhost:3000')
+    fetch('/api')
       .then(res => res.text())
       .then(data => {
         setApiStatus('success');
