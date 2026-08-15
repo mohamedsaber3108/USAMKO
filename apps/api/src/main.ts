@@ -2,7 +2,6 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
 import * as helmetModule from 'helmet';
-import { RequestTimingMiddleware } from './common/middleware/request-timing.middleware';
 import { AuditInterceptor } from './audit/audit.interceptor';
 import { AuditService } from './audit/audit.service';
 
@@ -18,8 +17,15 @@ async function bootstrap() {
   // Security headers with Helmet
   app.use(helmetModule.default());
 
-  // Request timing middleware
-  app.use(RequestTimingMiddleware.prototype.use);
+  // Request timing
+  const timingLogger = new Logger('RequestTiming');
+  app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+      timingLogger.log(`${req.method} ${req.originalUrl} ${res.statusCode} ${Date.now() - start}ms`);
+    });
+    next();
+  });
 
   // Global validation pipe
   app.useGlobalPipes(
