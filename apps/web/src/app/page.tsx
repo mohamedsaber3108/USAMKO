@@ -1,10 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
+import Link from 'next/link';
 
 export default function Home() {
+  const router = useRouter();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [apiStatus, setApiStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [apiMessage, setApiMessage] = useState('');
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, authLoading, router]);
 
   useEffect(() => {
     fetch('/api')
@@ -18,6 +29,18 @@ export default function Home() {
         setApiMessage('Failed to connect to API');
       });
   }, []);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
@@ -108,9 +131,19 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="text-gray-600 dark:text-gray-400">
-            <p className="text-sm">Phase 1 Sprint 1 - Project Setup Complete ✅</p>
-            <p className="text-xs mt-2">Ready for authentication implementation (Ticket 3.1)</p>
+          <div className="flex gap-4 justify-center">
+            <Link
+              href="/login"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/register"
+              className="bg-white hover:bg-gray-100 text-gray-900 border border-gray-300 font-semibold py-3 px-8 rounded-lg transition-colors"
+            >
+              Get Started
+            </Link>
           </div>
         </div>
       </div>
