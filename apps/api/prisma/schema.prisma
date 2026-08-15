@@ -40,6 +40,26 @@ model Tenant {
   webhookLogs          WebhookLog[]
   workflowSchedules    WorkflowSchedule[]
 
+  // LinkedIn Integration
+  linkedinProfiles     LinkedInProfile[]
+  linkedinSessions     LinkedInSession[]
+  linkedinMessages     LinkedInMessage[]
+
+  // Email Finder Integration
+  emailFinderResults   EmailFinderResult[]
+
+  // Admin Control Center
+  roles                Role[]
+  adminActions         AdminAction[]
+
+  // AI Model Orchestration
+  modelUsage           ModelUsage[]
+  aiBudget             AIBudget?
+
+  // Data Source Orchestration
+  dataQueries          DataQuery[]
+  dataWorkflows        DataWorkflow[]
+
   @@map("tenants")
 }
 
@@ -69,6 +89,30 @@ model User {
   teamMembers        TeamMember[]
   teamActivityLogs   TeamActivityLog[]
   userSetting        UserSetting?
+
+  // LinkedIn Integration
+  linkedinProfiles   LinkedInProfile[]
+  linkedinSessions   LinkedInSession[]
+  linkedinMessages   LinkedInMessage[]
+
+  // Email Finder Integration
+  emailFinderResults EmailFinderResult[]
+
+  // Admin Control Center
+  userRoles          UserRole[]
+  usageLimits        UsageLimits?
+  userUsage          UserUsage[]
+  sessions           Session[]
+  adminActions       AdminAction[]
+  impersonationsBy   Impersonation[]  @relation("ImpersonatedBy")
+  impersonations     Impersonation[]  @relation("Impersonations")
+
+  // AI Model Orchestration
+  modelUsage         ModelUsage[]
+
+  // Data Source Orchestration
+  dataQueries        DataQuery[]
+  dataWorkflows      DataWorkflow[]
 
   @@unique([tenantId, email])
   @@map("users")
@@ -226,10 +270,11 @@ model Lead {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  company     Company?          @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  enrichments LeadEnrichment[]
-  targets     CampaignTarget[]
+  tenant             Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  company            Company?             @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  enrichments        LeadEnrichment[]
+  targets            CampaignTarget[]
+  emailFinderResults EmailFinderResult[]
 
   @@unique([tenantId, linkedinUrl])
   @@index([tenantId, email])
@@ -660,4 +705,780 @@ model WorkflowSchedule {
   @@index([tenantId, enabled])
   @@index([nextRunAt])
   @@map("workflow_schedules")
+}
+
+// ============================================================================
+// LINKEDIN INTEGRATION MODELS
+// ============================================================================
+
+model LinkedInProfile {
+  id               String    @id @default(uuid())
+  tenantId         String
+  userId           String
+
+  // Profile data
+  publicIdentifier String    @unique
+  firstName        String
+  lastName         String
+  headline         String?
+  location         String?
+  profileUrl       String
+  photoUrl         String?
+
+  // Connection
+  isConnected      Boolean   @default(false)
+  connectionDate   DateTime?
+  connectionNote   String?
+
+  // Metadata
+  lastScraped      DateTime  @default(now())
+  dataHash         String?
+  rawData          Json?
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  tenant           Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  posts            LinkedInPost[]
+  messages         LinkedInMessage[]
+
+  @@index([tenantId, lastScraped])
+  @@index([userId])
+  @@map("linkedin_profiles")
+}
+
+model LinkedInPost {
+  id          String    @id @default(uuid())
+  profileId   String
+
+  // Post data
+  postId      String    @unique
+  text        String    @db.Text
+  url         String
+  postedAt    DateTime
+
+  // Media
+  hasMedia    Boolean   @default(false)
+  mediaUrls   String[]
+
+  // Engagement
+  likes       Int       @default(0)
+  comments    Int       @default(0)
+  shares      Int       @default(0)
+
+  // Scraping
+  lastScraped DateTime  @default(now())
+  rawData     Json?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  profile     LinkedInProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, postedAt])
+  @@index([lastScraped])
+  @@map("linkedin_posts")
+}
+
+model LinkedInSession {
+  id          String    @id @default(uuid())
+  tenantId    String
+  userId      String
+
+  // Session data
+  cookies     String    @db.Text
+  userAgent   String
+  proxy       String?
+
+  // Status
+  isActive    Boolean   @default(true)
+  lastUsed    DateTime  @default(now())
+  expiresAt   DateTime
+
+  // Metadata
+  ipAddress   String?
+  deviceInfo  Json?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, isActive])
+  @@index([userId, expiresAt])
+  @@map("linkedin_sessions")
+}
+
+model LinkedInMessage {
+  id           String    @id @default(uuid())
+  tenantId     String
+  userId       String
+  profileId    String?
+
+  // Message data
+  messageId    String?   @unique
+  threadId     String?
+  subject      String?
+  body         String    @db.Text
+  sentAt       DateTime  @default(now())
+
+  // Status
+  status       String    @default("sent")
+  isRead       Boolean   @default(false)
+
+  // Metadata
+  rawData      Json?
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile      LinkedInProfile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, sentAt])
+  @@index([userId])
+  @@index([threadId])
+  @@map("linkedin_messages")
+}
+
+// ============================================================================
+// EMAIL FINDER (LINKOUT) INTEGRATION MODELS
+// ============================================================================
+
+model EmailFinderResult {
+  id          String    @id @default(uuid())
+  tenantId    String
+  userId      String
+  leadId      String?
+
+  // Input
+  firstName   String
+  lastName    String
+  domain      String
+  company     String?
+
+  // Result
+  email       String?
+  confidence  Float
+  source      String
+  methods     String[]
+
+  // Alternative emails
+  alternatives Json?
+
+  // Verification
+  verified    Boolean   @default(false)
+  verifiedAt  DateTime?
+  reputation  String?
+
+  // Metadata
+  rawData     Json?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lead        Lead?     @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([userId])
+  @@index([leadId])
+  @@index([email])
+  @@map("email_finder_results")
+}
+
+// ============================================================================
+// ADMIN CONTROL CENTER MODELS
+// ============================================================================
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  EXPIRED
+  PENDING_VERIFICATION
+  DELETED
+}
+
+model Role {
+  id          String    @id @default(uuid())
+  tenantId    String
+  name        String
+  slug        String
+  description String?
+
+  // Permission sets
+  permissions String[]
+
+  // Feature access
+  featureAccess Json
+
+  // Platform access
+  platformAccess String[]
+
+  // Metadata
+  isDefault   Boolean   @default(false)
+  isSystem    Boolean   @default(false)
+  priority    Int       @default(0)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users       UserRole[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, isSystem])
+  @@map("roles")
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+  userId    String
+  roleId    String
+
+  assignedAt DateTime @default(now())
+  assignedBy String?
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  name        String
+  description String?
+  category    String
+  isSystem    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+
+  @@index([category])
+  @@map("permissions")
+}
+
+model UsageLimits {
+  id                  String  @id @default(uuid())
+  userId              String  @unique
+
+  // Limits (null = unlimited)
+  leadsPerMonth       Int?
+  campaignsPerMonth   Int?
+  platformAccountsMax Int?
+  aiTokensPerMonth    Int?
+  storageGB           Float?
+  teamsMax            Int?
+
+  // Alert thresholds
+  alertAt             Int     @default(80)
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user                User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("usage_limits")
+}
+
+model UserUsage {
+  id                   String   @id @default(uuid())
+  userId               String
+  month                String
+
+  // Current usage
+  leadsCollected       Int      @default(0)
+  campaignsRun         Int      @default(0)
+  platformAccountsUsed Int      @default(0)
+  aiTokensUsed         Int      @default(0)
+  storageUsedGB        Float    @default(0)
+
+  // Timestamps
+  resetAt              DateTime
+  updatedAt            DateTime @updatedAt
+
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month])
+  @@index([userId, month])
+  @@map("user_usage")
+}
+
+model Session {
+  id           String    @id @default(uuid())
+  userId       String
+  token        String    @unique
+
+  // Session details
+  ipAddress    String
+  userAgent    String
+  deviceType   String?
+  deviceName   String?
+  location     String?
+
+  // Lifecycle
+  createdAt    DateTime  @default(now())
+  expiresAt    DateTime
+  lastActiveAt DateTime  @default(now())
+  revokedAt    DateTime?
+  revokedBy    String?
+  revokedReason String?
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([token])
+  @@map("sessions")
+}
+
+model AdminAction {
+  id          String   @id @default(uuid())
+  tenantId    String
+  adminId     String
+
+  // Action details
+  action      String
+  resource    String
+  changes     Json
+  reason      String?
+
+  // Context
+  ipAddress   String
+  userAgent   String
+
+  createdAt   DateTime @default(now())
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  admin       User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([adminId, createdAt])
+  @@map("admin_actions")
+}
+
+model Impersonation {
+  id           String    @id @default(uuid())
+  adminId      String
+  targetUserId String
+
+  // Session details
+  reason       String
+  startedAt    DateTime  @default(now())
+  endedAt      DateTime?
+
+  // Context
+  ipAddress    String
+  actions      Json[]
+
+  admin        User      @relation("ImpersonatedBy", fields: [adminId], references: [id], onDelete: Cascade)
+  target       User      @relation("Impersonations", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  @@index([adminId, startedAt])
+  @@index([targetUserId])
+  @@map("impersonations")
+}
+
+// ============================================================================
+// AI MODEL ORCHESTRATION MODELS
+// ============================================================================
+
+enum AIProvider {
+  AWS_BEDROCK
+  OPENAI
+  ANTHROPIC_DIRECT
+  AZURE_OPENAI
+  GOOGLE_VERTEX
+  LOCAL
+}
+
+enum ModelTier {
+  NANO
+  SMALL
+  MEDIUM
+  LARGE
+  PREMIUM
+}
+
+enum TaskComplexity {
+  TRIVIAL
+  SIMPLE
+  MODERATE
+  COMPLEX
+  CRITICAL
+}
+
+model AIModel {
+  id             String     @id @default(uuid())
+
+  // Model details
+  provider       AIProvider
+  modelId        String
+  name           String
+  version        String?
+
+  // Capabilities
+  maxTokens      Int        @default(200000)
+  supportsVision Boolean    @default(false)
+  supportsTools  Boolean    @default(true)
+
+  // Cost (per 1M tokens)
+  costInput      Float
+  costOutput     Float
+
+  // Classification
+  tier           ModelTier
+  qualityScore   Float      @default(0.8)
+  speedScore     Float      @default(0.7)
+
+  // Configuration
+  enabled        Boolean    @default(true)
+  priority       Int        @default(50)
+
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  usage          ModelUsage[]
+
+  @@unique([provider, modelId])
+  @@index([enabled, tier])
+  @@map("ai_models")
+}
+
+model TaskTemplate {
+  id              String         @id @default(uuid())
+
+  // Task details
+  name            String         @unique
+  category        String
+  description     String
+
+  // Complexity classification
+  complexity      TaskComplexity
+
+  // Quality requirements
+  qualityMin      Float          @default(0.7)
+
+  // Latency requirements
+  maxLatencyMs    Int?
+
+  // Recommended models
+  recommendedModels String[]
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([category])
+  @@map("task_templates")
+}
+
+model ModelUsage {
+  id             String         @id @default(uuid())
+  tenantId       String
+  userId         String
+
+  // Request details
+  modelId        String
+  taskName       String?
+  taskComplexity TaskComplexity?
+
+  // Tokens
+  inputTokens    Int
+  outputTokens   Int
+
+  // Cost (USD)
+  costInput      Float
+  costOutput     Float
+  costTotal      Float
+
+  // Performance
+  latencyMs      Int
+  qualityScore   Float?
+
+  // Context
+  success        Boolean        @default(true)
+  errorMessage   String?
+  requestId      String?
+
+  createdAt      DateTime       @default(now())
+
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  model          AIModel        @relation(fields: [modelId], references: [id])
+
+  @@index([tenantId, createdAt])
+  @@index([userId, createdAt])
+  @@index([modelId, createdAt])
+  @@map("model_usage")
+}
+
+model AIBudget {
+  id             String   @id @default(uuid())
+  tenantId       String   @unique
+
+  // Budget limits (USD)
+  dailyLimit     Float?
+  monthlyLimit   Float?
+
+  // Current spend (USD)
+  dailySpend     Float    @default(0)
+  monthlySpend   Float    @default(0)
+
+  // Reset dates
+  dailyResetAt   DateTime
+  monthlyResetAt DateTime
+
+  // Actions
+  alertAt        Float    @default(0.8)
+  stopAt         Float    @default(1.0)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("ai_budgets")
+}
+
+model PromptCache {
+  id           String   @id @default(uuid())
+
+  // Cache key
+  cacheKey     String   @unique
+
+  // Prompt details
+  prompt       String   @db.Text
+  modelId      String
+  temperature  Float?
+
+  // Cached response
+  response     String   @db.Text
+
+  // Cost savings
+  inputTokens  Int
+  outputTokens Int
+  savedCost    Float
+
+  // Cache metadata
+  hitCount     Int      @default(1)
+  lastUsedAt   DateTime @default(now())
+  expiresAt    DateTime
+
+  createdAt    DateTime @default(now())
+
+  @@index([cacheKey, expiresAt])
+  @@map("prompt_cache")
+}
+
+// ============================================================================
+// DATA SOURCE ORCHESTRATION MODELS
+// ============================================================================
+
+enum SourceType {
+  SOCIAL_PLATFORM
+  BUSINESS_DATABASE
+  MAP_SERVICE
+  EMAIL_FINDER
+  WEB_SCRAPER
+  AI_SERVICE
+  INTERNAL
+}
+
+enum QueryStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model DataSource {
+  id           String     @id @default(uuid())
+
+  // Source details
+  name         String
+  slug         String     @unique
+  provider     String
+  type         SourceType
+
+  // Capabilities
+  capabilities String[]
+
+  // Cost & limits
+  costPerQuery Float      @default(0)
+  freeQueries  Int?
+  rateLimit    Int?
+
+  // Configuration
+  requiresAuth Boolean    @default(false)
+  configSchema Json?
+
+  // Metadata
+  enabled      Boolean    @default(true)
+  priority     Int        @default(50)
+  quality      Float      @default(0.7)
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  queries      DataQuery[]
+
+  @@index([enabled, type])
+  @@map("data_sources")
+}
+
+model DataQuery {
+  id              String      @id @default(uuid())
+  tenantId        String
+  userId          String
+
+  // Query details
+  naturalLanguage String      @db.Text
+  parsedQuery     Json
+
+  // Execution plan
+  sourceId        String
+  operation       String
+  parameters      Json
+
+  // Results
+  status          QueryStatus
+  resultCount     Int         @default(0)
+  results         Json?
+
+  // Performance
+  startedAt       DateTime    @default(now())
+  completedAt     DateTime?
+  latencyMs       Int?
+
+  // Cost
+  cost            Float       @default(0)
+
+  // Error handling
+  errorMessage    String?
+  retryCount      Int         @default(0)
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source          DataSource  @relation(fields: [sourceId], references: [id])
+  workflow        DataWorkflow? @relation(fields: [workflowId], references: [id])
+  workflowId      String?
+
+  @@index([tenantId, createdAt])
+  @@index([userId, createdAt])
+  @@index([workflowId])
+  @@map("data_queries")
+}
+
+model DataWorkflow {
+  id              String           @id @default(uuid())
+  tenantId        String
+  userId          String
+
+  // Workflow details
+  name            String
+  description     String?
+  naturalLanguage String           @db.Text
+
+  // Execution plan
+  plan            Json
+
+  // Status
+  status          QueryStatus
+  currentStep     Int              @default(0)
+
+  // Results
+  finalResults    Json?
+  recordCount     Int              @default(0)
+
+  // Performance
+  startedAt       DateTime         @default(now())
+  completedAt     DateTime?
+  totalLatencyMs  Int?
+
+  // Cost
+  totalCost       Float            @default(0)
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  queries         DataQuery[]
+  steps           DataWorkflowStep[]
+
+  @@index([tenantId, createdAt])
+  @@index([userId, status])
+  @@map("data_workflows")
+}
+
+model DataWorkflowStep {
+  id          String      @id @default(uuid())
+  workflowId  String
+
+  // Step details
+  stepNumber  Int
+  name        String
+  description String
+
+  // Execution
+  sourceSlug  String
+  operation   String
+  parameters  Json
+
+  // Dependencies
+  dependsOn   Int[]
+
+  // Status
+  status      QueryStatus @default(PENDING)
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  // Results
+  resultCount Int         @default(0)
+  results     Json?
+  error       String?
+
+  workflow    DataWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@unique([workflowId, stepNumber])
+  @@index([workflowId, status])
+  @@map("data_workflow_steps")
+}
+
+model DataCache {
+  id          String   @id @default(uuid())
+
+  // Cache key
+  cacheKey    String   @unique
+
+  // Source info
+  sourceSlug  String
+  operation   String
+  parameters  Json
+
+  // Cached data
+  data        Json
+  recordCount Int
+
+  // Metadata
+  quality     Float    @default(0.8)
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+  lastUsedAt  DateTime @default(now())
+  hitCount    Int      @default(1)
+
+  @@index([cacheKey, expiresAt])
+  @@index([sourceSlug, expiresAt])
+  @@map("data_cache")
 }
