@@ -59,11 +59,11 @@ export class LinkoutService {
         confidence: result.confidence,
         source: result.source,
         methods: result.methods,
-        alternatives: result.alternativeEmails,
+        alternatives: result.alternativeEmails as any,
         verified: verification?.valid || false,
         verifiedAt: verification ? new Date() : null,
         reputation: verification?.reputation,
-        rawData: { result, verification },
+        rawData: { result, verification } as any,
       },
     });
 
