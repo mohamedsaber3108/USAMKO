@@ -125,7 +125,7 @@ export class DataOrchestrationService {
       slug: source.slug,
       name: source.name,
       type: source.type,
-      description: source.description,
+      provider: source.provider,
       capabilities: source.capabilities,
       costPerQuery: source.costPerQuery,
       quality: source.quality,

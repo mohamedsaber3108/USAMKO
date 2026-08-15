@@ -1,6 +1,5 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { BudgetPeriod } from '@prisma/client';
 
 @Injectable()
 export class BudgetManagerService {
@@ -8,105 +7,92 @@ export class BudgetManagerService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Check if budget allows request (throws if exceeded)
-   */
   async checkBudget(tenantId: string): Promise<void> {
     const budget = await this.getActiveBudget(tenantId);
 
-    if (!budget || !budget.enabled) {
-      // No budget configured = unlimited
+    if (!budget) {
       return;
     }
 
-    const spent = await this.getCurrentSpending(tenantId, budget.period);
+    await this.resetIfNeeded(budget);
 
-    if (spent >= budget.limitAmount) {
+    if (budget.monthlyLimit && budget.monthlySpend >= budget.monthlyLimit) {
       throw new BadRequestException(
-        `AI budget exceeded. Limit: $${budget.limitAmount}, Spent: $${spent.toFixed(2)}. ` +
-        `Budget resets ${this.getResetDate(budget.period).toLocaleDateString()}.`,
+        `AI budget exceeded. Monthly limit: $${budget.monthlyLimit}, Spent: $${budget.monthlySpend.toFixed(2)}. ` +
+        `Resets ${budget.monthlyResetAt.toLocaleDateString()}.`,
       );
     }
 
-    // Check warning threshold
-    const percentUsed = (spent / budget.limitAmount) * 100;
-    if (percentUsed >= 80 && percentUsed < 100) {
-      this.logger.warn(
-        `Budget warning for tenant ${tenantId}: ${percentUsed.toFixed(0)}% used ($${spent.toFixed(2)} of $${budget.limitAmount})`,
+    if (budget.dailyLimit && budget.dailySpend >= budget.dailyLimit) {
+      throw new BadRequestException(
+        `AI daily budget exceeded. Daily limit: $${budget.dailyLimit}, Spent: $${budget.dailySpend.toFixed(2)}. ` +
+        `Resets ${budget.dailyResetAt.toLocaleDateString()}.`,
       );
+    }
+
+    const limit = budget.monthlyLimit || budget.dailyLimit;
+    const spent = budget.monthlyLimit ? budget.monthlySpend : budget.dailySpend;
+    if (limit) {
+      const percentUsed = spent / limit;
+      if (percentUsed >= budget.alertAt && percentUsed < budget.stopAt) {
+        this.logger.warn(
+          `Budget warning for tenant ${tenantId}: ${(percentUsed * 100).toFixed(0)}% used ($${spent.toFixed(2)} of $${limit})`,
+        );
+      }
     }
   }
 
-  /**
-   * Get current spending for period
-   */
-  async getCurrentSpending(tenantId: string, period: BudgetPeriod): Promise<number> {
-    const startDate = this.getPeriodStartDate(period);
-
-    const result = await this.prisma.modelUsage.aggregate({
-      where: {
-        tenantId,
-        createdAt: { gte: startDate },
-      },
-      _sum: {
-        costTotal: true,
-      },
-    });
-
-    return result._sum.costTotal || 0;
+  async getCurrentSpending(tenantId: string, period: 'daily' | 'monthly' = 'monthly'): Promise<number> {
+    const budget = await this.getActiveBudget(tenantId);
+    if (!budget) return 0;
+    return period === 'daily' ? budget.dailySpend : budget.monthlySpend;
   }
 
-  /**
-   * Get or create budget for tenant
-   */
   async getActiveBudget(tenantId: string) {
-    return this.prisma.aIBudget.findFirst({
-      where: {
-        tenantId,
-        enabled: true,
-      },
-      orderBy: { createdAt: 'desc' },
+    return this.prisma.aIBudget.findUnique({
+      where: { tenantId },
     });
   }
 
-  /**
-   * Set budget for tenant
-   */
   async setBudget(params: {
     tenantId: string;
-    limitAmount: number;
-    period: BudgetPeriod;
-    alertThreshold?: number;
-    enabled?: boolean;
+    dailyLimit?: number;
+    monthlyLimit?: number;
+    alertAt?: number;
+    stopAt?: number;
   }) {
-    // Disable any existing budgets
-    await this.prisma.aIBudget.updateMany({
-      where: {
-        tenantId: params.tenantId,
-        enabled: true,
-      },
-      data: { enabled: false },
-    });
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
 
-    // Create new budget
-    return this.prisma.aIBudget.create({
-      data: {
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+    return this.prisma.aIBudget.upsert({
+      where: { tenantId: params.tenantId },
+      create: {
         tenantId: params.tenantId,
-        limitAmount: params.limitAmount,
-        period: params.period,
-        alertThreshold: params.alertThreshold || 80,
-        enabled: params.enabled !== false,
+        dailyLimit: params.dailyLimit || null,
+        monthlyLimit: params.monthlyLimit || null,
+        alertAt: params.alertAt || 0.8,
+        stopAt: params.stopAt || 1.0,
+        dailyResetAt: tomorrow,
+        monthlyResetAt: nextMonth,
+      },
+      update: {
+        dailyLimit: params.dailyLimit,
+        monthlyLimit: params.monthlyLimit,
+        ...(params.alertAt !== undefined && { alertAt: params.alertAt }),
+        ...(params.stopAt !== undefined && { stopAt: params.stopAt }),
       },
     });
   }
 
-  /**
-   * Update budget
-   */
   async updateBudget(budgetId: string, data: {
-    limitAmount?: number;
-    alertThreshold?: number;
-    enabled?: boolean;
+    dailyLimit?: number;
+    monthlyLimit?: number;
+    alertAt?: number;
+    stopAt?: number;
   }) {
     return this.prisma.aIBudget.update({
       where: { id: budgetId },
@@ -114,25 +100,15 @@ export class BudgetManagerService {
     });
   }
 
-  /**
-   * Disable budget
-   */
   async disableBudget(tenantId: string): Promise<number> {
-    const result = await this.prisma.aIBudget.updateMany({
-      where: {
-        tenantId,
-        enabled: true,
-      },
-      data: { enabled: false },
+    const result = await this.prisma.aIBudget.deleteMany({
+      where: { tenantId },
     });
 
-    this.logger.log(`Disabled budgets for tenant ${tenantId}`);
+    this.logger.log(`Removed budget for tenant ${tenantId}`);
     return result.count;
   }
 
-  /**
-   * Get budget status with spending
-   */
   async getBudgetStatus(tenantId: string) {
     const budget = await this.getActiveBudget(tenantId);
 
@@ -143,12 +119,13 @@ export class BudgetManagerService {
       };
     }
 
-    const spent = await this.getCurrentSpending(tenantId, budget.period);
-    const remaining = Math.max(0, budget.limitAmount - spent);
-    const percentUsed = (spent / budget.limitAmount) * 100;
+    const limit = budget.monthlyLimit || budget.dailyLimit || 0;
+    const spent = budget.monthlyLimit ? budget.monthlySpend : budget.dailySpend;
+    const remaining = Math.max(0, limit - spent);
+    const percentUsed = limit > 0 ? (spent / limit) * 100 : 0;
 
-    const status = percentUsed >= 100 ? 'exceeded' :
-                   percentUsed >= budget.alertThreshold ? 'warning' :
+    const status = percentUsed >= (budget.stopAt * 100) ? 'exceeded' :
+                   percentUsed >= (budget.alertAt * 100) ? 'warning' :
                    'ok';
 
     return {
@@ -156,35 +133,29 @@ export class BudgetManagerService {
       unlimited: false,
       budget: {
         id: budget.id,
-        limitAmount: budget.limitAmount,
-        period: budget.period,
-        alertThreshold: budget.alertThreshold,
-        enabled: budget.enabled,
+        dailyLimit: budget.dailyLimit,
+        monthlyLimit: budget.monthlyLimit,
+        alertAt: budget.alertAt,
+        stopAt: budget.stopAt,
       },
       spending: {
-        spent,
+        dailySpend: budget.dailySpend,
+        monthlySpend: budget.monthlySpend,
         remaining,
         percentUsed: Math.round(percentUsed * 10) / 10,
       },
       status,
-      resetDate: this.getResetDate(budget.period),
-      message: this.getStatusMessage(status, spent, remaining, budget.limitAmount),
+      dailyResetDate: budget.dailyResetAt,
+      monthlyResetDate: budget.monthlyResetAt,
+      message: this.getStatusMessage(status, spent, remaining, limit),
     };
   }
 
-  /**
-   * Get all budgets for tenant (history)
-   */
   async getBudgetHistory(tenantId: string) {
-    return this.prisma.aIBudget.findMany({
-      where: { tenantId },
-      orderBy: { createdAt: 'desc' },
-    });
+    const budget = await this.getActiveBudget(tenantId);
+    return budget ? [budget] : [];
   }
 
-  /**
-   * Check if tenant should receive alert
-   */
   async shouldAlert(tenantId: string): Promise<{
     shouldAlert: boolean;
     reason?: string;
@@ -192,14 +163,17 @@ export class BudgetManagerService {
   }> {
     const budget = await this.getActiveBudget(tenantId);
 
-    if (!budget || !budget.enabled) {
+    if (!budget) {
       return { shouldAlert: false };
     }
 
-    const spent = await this.getCurrentSpending(tenantId, budget.period);
-    const percentUsed = (spent / budget.limitAmount) * 100;
+    const limit = budget.monthlyLimit || budget.dailyLimit || 0;
+    const spent = budget.monthlyLimit ? budget.monthlySpend : budget.dailySpend;
+    if (limit === 0) return { shouldAlert: false };
 
-    if (percentUsed >= 100) {
+    const percentUsed = (spent / limit) * 100;
+
+    if (spent / limit >= budget.stopAt) {
       return {
         shouldAlert: true,
         reason: 'Budget exceeded',
@@ -207,7 +181,7 @@ export class BudgetManagerService {
       };
     }
 
-    if (percentUsed >= budget.alertThreshold) {
+    if (spent / limit >= budget.alertAt) {
       return {
         shouldAlert: true,
         reason: 'Alert threshold reached',
@@ -218,9 +192,6 @@ export class BudgetManagerService {
     return { shouldAlert: false };
   }
 
-  /**
-   * Get budget projections
-   */
   async getProjection(tenantId: string) {
     const budget = await this.getActiveBudget(tenantId);
 
@@ -228,94 +199,70 @@ export class BudgetManagerService {
       return null;
     }
 
-    const spent = await this.getCurrentSpending(tenantId, budget.period);
-    const periodStart = this.getPeriodStartDate(budget.period);
-    const periodEnd = this.getResetDate(budget.period);
+    const limit = budget.monthlyLimit || budget.dailyLimit || 0;
+    const spent = budget.monthlyLimit ? budget.monthlySpend : budget.dailySpend;
+    const resetDate = budget.monthlyLimit ? budget.monthlyResetAt : budget.dailyResetAt;
     const now = new Date();
 
-    const elapsedMs = now.getTime() - periodStart.getTime();
-    const totalPeriodMs = periodEnd.getTime() - periodStart.getTime();
-    const percentElapsed = (elapsedMs / totalPeriodMs) * 100;
+    const periodStart = budget.monthlyLimit
+      ? new Date(now.getFullYear(), now.getMonth(), 1)
+      : new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    const dailyRate = spent / (elapsedMs / (1000 * 60 * 60 * 24));
-    const remainingDays = (periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+    const elapsedMs = now.getTime() - periodStart.getTime();
+    const totalPeriodMs = resetDate.getTime() - periodStart.getTime();
+    const percentElapsed = totalPeriodMs > 0 ? (elapsedMs / totalPeriodMs) * 100 : 0;
+
+    const elapsedDays = elapsedMs / (1000 * 60 * 60 * 24);
+    const dailyRate = elapsedDays > 0 ? spent / elapsedDays : 0;
+    const remainingDays = (resetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
     const projectedTotal = spent + (dailyRate * remainingDays);
 
-    const willExceed = projectedTotal > budget.limitAmount;
+    const willExceed = limit > 0 && projectedTotal > limit;
 
     return {
       currentSpent: spent,
-      budgetLimit: budget.limitAmount,
+      budgetLimit: limit,
       percentElapsed: Math.round(percentElapsed),
-      percentSpent: Math.round((spent / budget.limitAmount) * 100),
+      percentSpent: limit > 0 ? Math.round((spent / limit) * 100) : 0,
       dailyAverageRate: Math.round(dailyRate * 100) / 100,
       projectedTotal: Math.round(projectedTotal * 100) / 100,
-      projectedRemaining: Math.max(0, budget.limitAmount - projectedTotal),
+      projectedRemaining: Math.max(0, limit - projectedTotal),
       willExceed,
       daysRemaining: Math.ceil(remainingDays),
-      resetDate: periodEnd,
-      warning: willExceed ?
-        `At current rate, you will exceed budget by $${(projectedTotal - budget.limitAmount).toFixed(2)}` :
-        null,
+      resetDate,
+      warning: willExceed
+        ? `At current rate, you will exceed budget by $${(projectedTotal - limit).toFixed(2)}`
+        : null,
     };
   }
 
-  /**
-   * Helper: Get period start date
-   */
-  private getPeriodStartDate(period: BudgetPeriod): Date {
+  private async resetIfNeeded(budget: any): Promise<void> {
     const now = new Date();
+    const updates: any = {};
 
-    switch (period) {
-      case BudgetPeriod.DAILY:
-        const daily = new Date(now);
-        daily.setHours(0, 0, 0, 0);
-        return daily;
+    if (now >= budget.dailyResetAt) {
+      const tomorrow = new Date(now);
+      tomorrow.setDate(now.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+      updates.dailySpend = 0;
+      updates.dailyResetAt = tomorrow;
+    }
 
-      case BudgetPeriod.WEEKLY:
-        const weekly = new Date(now);
-        weekly.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
-        weekly.setHours(0, 0, 0, 0);
-        return weekly;
+    if (now >= budget.monthlyResetAt) {
+      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      updates.monthlySpend = 0;
+      updates.monthlyResetAt = nextMonth;
+    }
 
-      case BudgetPeriod.MONTHLY:
-        return new Date(now.getFullYear(), now.getMonth(), 1);
-
-      default:
-        return new Date(now.getFullYear(), now.getMonth(), 1);
+    if (Object.keys(updates).length > 0) {
+      await this.prisma.aIBudget.update({
+        where: { id: budget.id },
+        data: updates,
+      });
+      Object.assign(budget, updates);
     }
   }
 
-  /**
-   * Helper: Get next reset date
-   */
-  private getResetDate(period: BudgetPeriod): Date {
-    const now = new Date();
-
-    switch (period) {
-      case BudgetPeriod.DAILY:
-        const tomorrow = new Date(now);
-        tomorrow.setDate(now.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0);
-        return tomorrow;
-
-      case BudgetPeriod.WEEKLY:
-        const nextWeek = new Date(now);
-        nextWeek.setDate(now.getDate() + (7 - now.getDay()));
-        nextWeek.setHours(0, 0, 0, 0);
-        return nextWeek;
-
-      case BudgetPeriod.MONTHLY:
-        return new Date(now.getFullYear(), now.getMonth() + 1, 1);
-
-      default:
-        return new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    }
-  }
-
-  /**
-   * Helper: Get status message
-   */
   private getStatusMessage(
     status: string,
     spent: number,

@@ -197,10 +197,10 @@ export class AIOrchestrationController {
   @Post('budget/set')
   async setBudget(@Body() body: {
     tenantId: string;
-    limitAmount: number;
-    period: 'DAILY' | 'WEEKLY' | 'MONTHLY';
-    alertThreshold?: number;
-    enabled?: boolean;
+    dailyLimit?: number;
+    monthlyLimit?: number;
+    alertAt?: number;
+    stopAt?: number;
   }) {
     return this.budgetManager.setBudget(body);
   }
@@ -211,9 +211,10 @@ export class AIOrchestrationController {
   @Post('budget/update')
   async updateBudget(@Body() body: {
     budgetId: string;
-    limitAmount?: number;
-    alertThreshold?: number;
-    enabled?: boolean;
+    dailyLimit?: number;
+    monthlyLimit?: number;
+    alertAt?: number;
+    stopAt?: number;
   }) {
     return this.budgetManager.updateBudget(body.budgetId, body);
   }

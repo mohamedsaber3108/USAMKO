@@ -33,24 +33,15 @@ export class SourceRegistryService implements OnModuleInit {
     await this.initializeDefaultSources();
   }
 
-  /**
-   * Register a data source
-   */
   registerSource(source: DataSourceAdapter): void {
     this.sources.set(source.slug, source);
     this.logger.log(`Registered data source: ${source.name} (${source.slug})`);
   }
 
-  /**
-   * Get data source by slug
-   */
   async getSource(slug: string): Promise<DataSourceAdapter | null> {
     return this.sources.get(slug) || null;
   }
 
-  /**
-   * Get all registered sources
-   */
   async getAllSources(): Promise<DataSource[]> {
     return this.prisma.dataSource.findMany({
       where: { enabled: true },
@@ -58,9 +49,6 @@ export class SourceRegistryService implements OnModuleInit {
     });
   }
 
-  /**
-   * Get sources by type
-   */
   async getSourcesByType(type: SourceType): Promise<DataSource[]> {
     return this.prisma.dataSource.findMany({
       where: {
@@ -70,9 +58,6 @@ export class SourceRegistryService implements OnModuleInit {
     });
   }
 
-  /**
-   * Get sources by capability
-   */
   async getSourcesByCapability(capability: string): Promise<DataSource[]> {
     return this.prisma.dataSource.findMany({
       where: {
@@ -82,99 +67,79 @@ export class SourceRegistryService implements OnModuleInit {
     });
   }
 
-  /**
-   * Initialize default data sources in database
-   */
   private async initializeDefaultSources(): Promise<void> {
     const sources = [
       {
         slug: 'linkedin',
         name: 'LinkedIn',
+        provider: 'linkedin',
         type: SourceType.SOCIAL_PLATFORM,
-        description: 'Professional network for finding people and companies',
         capabilities: ['discover', 'collect', 'enrich'],
         costPerQuery: 0,
         quality: 0.9,
-        rateLimitRequests: 100,
-        rateLimitWindowMs: 3600000, // 1 hour
+        rateLimit: 100,
         enabled: true,
-        config: {
-          baseUrl: 'https://www.linkedin.com',
-          useScraping: true,
-        },
       },
       {
         slug: 'linkout',
         name: 'Linkout Email Finder',
+        provider: 'linkout',
         type: SourceType.EMAIL_FINDER,
-        description: '100% FREE email finding with 85% success rate',
         capabilities: ['enrich'],
         costPerQuery: 0,
         quality: 0.85,
-        rateLimitRequests: 1000,
-        rateLimitWindowMs: 3600000,
+        rateLimit: 1000,
         enabled: true,
-        config: {
-          methods: [
-            'pattern_matching',
-            'clearbit',
-            'website_scraping',
-            'github',
-            'emailrep',
-          ],
-        },
       },
       {
         slug: 'google_maps',
         name: 'Google Maps',
+        provider: 'google',
         type: SourceType.MAP_SERVICE,
-        description: 'Find businesses and locations',
         capabilities: ['discover', 'collect'],
-        costPerQuery: 0.017, // $17 per 1000 requests
+        costPerQuery: 0.017,
         quality: 0.95,
-        rateLimitRequests: 100,
-        rateLimitWindowMs: 1000,
-        enabled: false, // Requires API key
-        config: {
-          requiresApiKey: true,
-        },
+        rateLimit: 100,
+        requiresAuth: true,
+        enabled: false,
       },
       {
         slug: 'web_scraper',
         name: 'Web Scraper',
+        provider: 'internal',
         type: SourceType.WEB_SCRAPER,
-        description: 'Generic web scraping for any website',
         capabilities: ['extract', 'collect'],
         costPerQuery: 0,
         quality: 0.7,
-        rateLimitRequests: 50,
-        rateLimitWindowMs: 60000,
+        rateLimit: 50,
         enabled: true,
-        config: {
-          userAgent: 'Mozilla/5.0 (compatible; USAMKObot/1.0)',
-        },
       },
       {
         slug: 'github',
         name: 'GitHub',
-        type: SourceType.DEVELOPER_PLATFORM,
-        description: 'Find developers and projects',
+        provider: 'github',
+        type: SourceType.WEB_SCRAPER,
         capabilities: ['discover', 'collect', 'enrich'],
         costPerQuery: 0,
         quality: 0.8,
-        rateLimitRequests: 60,
-        rateLimitWindowMs: 3600000,
+        rateLimit: 60,
         enabled: true,
-        config: {
-          baseUrl: 'https://api.github.com',
-        },
       },
     ];
 
     for (const source of sources) {
       await this.prisma.dataSource.upsert({
         where: { slug: source.slug },
-        update: source,
+        update: {
+          name: source.name,
+          provider: source.provider,
+          type: source.type,
+          capabilities: source.capabilities,
+          costPerQuery: source.costPerQuery,
+          quality: source.quality,
+          rateLimit: source.rateLimit,
+          enabled: source.enabled,
+        },
         create: source,
       });
     }
@@ -182,9 +147,6 @@ export class SourceRegistryService implements OnModuleInit {
     this.logger.log(`Initialized ${sources.length} default data sources`);
   }
 
-  /**
-   * Enable/disable source
-   */
   async setSourceEnabled(slug: string, enabled: boolean): Promise<void> {
     await this.prisma.dataSource.update({
       where: { slug },
@@ -194,21 +156,15 @@ export class SourceRegistryService implements OnModuleInit {
     this.logger.log(`Source ${slug} ${enabled ? 'enabled' : 'disabled'}`);
   }
 
-  /**
-   * Update source config
-   */
-  async updateSourceConfig(slug: string, config: any): Promise<void> {
+  async updateSourceConfig(slug: string, configSchema: any): Promise<void> {
     await this.prisma.dataSource.update({
       where: { slug },
-      data: { config },
+      data: { configSchema },
     });
 
     this.logger.log(`Updated config for source: ${slug}`);
   }
 
-  /**
-   * Get source statistics
-   */
   async getSourceStatistics(slug: string, period: 'day' | 'week' | 'month' = 'month') {
     const startDate = this.getStartDate(period);
 
@@ -235,15 +191,12 @@ export class SourceRegistryService implements OnModuleInit {
       totalResults: completed.reduce((sum, q) => sum + (q.resultCount || 0), 0),
       averageLatency:
         completed.length > 0
-          ? completed.reduce((sum, q) => sum + q.latencyMs, 0) / completed.length
+          ? completed.reduce((sum, q) => sum + (q.latencyMs || 0), 0) / completed.length
           : 0,
       totalCost: queries.reduce((sum, q) => sum + q.cost, 0),
     };
   }
 
-  /**
-   * Get all source statistics
-   */
   async getAllSourceStatistics(period: 'day' | 'week' | 'month' = 'month') {
     const sources = await this.getAllSources();
 
@@ -261,9 +214,6 @@ export class SourceRegistryService implements OnModuleInit {
     return stats;
   }
 
-  /**
-   * Helper: Get start date for period
-   */
   private getStartDate(period: 'day' | 'week' | 'month'): Date {
     const now = new Date();
     switch (period) {
@@ -277,9 +227,6 @@ export class SourceRegistryService implements OnModuleInit {
   }
 }
 
-/**
- * Base class for data source adapters
- */
 export abstract class BaseDataSource implements DataSourceAdapter {
   abstract id: string;
   abstract slug: string;
@@ -306,7 +253,6 @@ export abstract class BaseDataSource implements DataSourceAdapter {
   }
 
   async enrichBatch(records: UnifiedRecord[]): Promise<UnifiedRecord[]> {
-    // Default batch implementation - enrich one by one
     const enriched = await Promise.all(
       records.map(async (record) => {
         const enrichment = await this.enrich(record);
@@ -321,7 +267,6 @@ export abstract class BaseDataSource implements DataSourceAdapter {
   }
 
   async checkRateLimit(): Promise<{ allowed: boolean; resetAt?: Date }> {
-    // Default: always allowed
     return { allowed: true };
   }
 }

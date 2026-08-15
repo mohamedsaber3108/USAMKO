@@ -9,44 +9,38 @@ export class PromptCacheService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Get cached response for prompt
-   */
   async get(prompt: string, modelId?: string): Promise<{
     response: string;
     modelId: string;
     inputTokens: number;
     outputTokens: number;
   } | null> {
-    const hash = this.hashPrompt(prompt, modelId);
+    const cacheKey = this.hashPrompt(prompt, modelId);
 
     const cached = await this.prisma.promptCache.findUnique({
-      where: { hash },
+      where: { cacheKey },
     });
 
     if (!cached) {
       return null;
     }
 
-    // Check if expired
     const now = new Date();
     if (cached.expiresAt && cached.expiresAt < now) {
-      this.logger.debug(`Cache entry expired: ${hash}`);
-      // Clean up expired entry
-      await this.prisma.promptCache.delete({ where: { hash } });
+      this.logger.debug(`Cache entry expired: ${cacheKey}`);
+      await this.prisma.promptCache.delete({ where: { cacheKey } });
       return null;
     }
 
-    // Increment hit count
     await this.prisma.promptCache.update({
-      where: { hash },
+      where: { cacheKey },
       data: {
-        hits: { increment: 1 },
-        lastAccessedAt: now,
+        hitCount: { increment: 1 },
+        lastUsedAt: now,
       },
     });
 
-    this.logger.log(`Cache HIT for prompt hash: ${hash.substring(0, 8)}...`);
+    this.logger.log(`Cache HIT for prompt hash: ${cacheKey.substring(0, 8)}...`);
 
     return {
       response: cached.response,
@@ -56,9 +50,6 @@ export class PromptCacheService {
     };
   }
 
-  /**
-   * Store response in cache
-   */
   async set(params: {
     prompt: string;
     modelId: string;
@@ -67,39 +58,37 @@ export class PromptCacheService {
     outputTokens: number;
     ttlHours?: number;
   }): Promise<void> {
-    const hash = this.hashPrompt(params.prompt, params.modelId);
+    const cacheKey = this.hashPrompt(params.prompt, params.modelId);
     const now = new Date();
     const ttl = params.ttlHours || this.DEFAULT_TTL_HOURS;
     const expiresAt = new Date(now.getTime() + ttl * 60 * 60 * 1000);
 
     await this.prisma.promptCache.upsert({
-      where: { hash },
+      where: { cacheKey },
       create: {
-        hash,
+        cacheKey,
         prompt: params.prompt,
         modelId: params.modelId,
         response: params.response,
         inputTokens: params.inputTokens,
         outputTokens: params.outputTokens,
-        hits: 0,
+        savedCost: 0,
+        hitCount: 0,
         expiresAt,
-        lastAccessedAt: now,
+        lastUsedAt: now,
       },
       update: {
         response: params.response,
         inputTokens: params.inputTokens,
         outputTokens: params.outputTokens,
         expiresAt,
-        lastAccessedAt: now,
+        lastUsedAt: now,
       },
     });
 
-    this.logger.log(`Cached response for prompt hash: ${hash.substring(0, 8)}...`);
+    this.logger.log(`Cached response for prompt hash: ${cacheKey.substring(0, 8)}...`);
   }
 
-  /**
-   * Clear cache for specific model
-   */
   async clearForModel(modelId: string): Promise<number> {
     const result = await this.prisma.promptCache.deleteMany({
       where: { modelId },
@@ -109,9 +98,6 @@ export class PromptCacheService {
     return result.count;
   }
 
-  /**
-   * Clear all expired entries
-   */
   async clearExpired(): Promise<number> {
     const now = new Date();
     const result = await this.prisma.promptCache.deleteMany({
@@ -124,22 +110,16 @@ export class PromptCacheService {
     return result.count;
   }
 
-  /**
-   * Clear all cache entries
-   */
   async clearAll(): Promise<number> {
     const result = await this.prisma.promptCache.deleteMany({});
     this.logger.log(`Cleared all ${result.count} cache entries`);
     return result.count;
   }
 
-  /**
-   * Get cache statistics
-   */
   async getStatistics() {
     const allEntries = await this.prisma.promptCache.findMany({
       select: {
-        hits: true,
+        hitCount: true,
         createdAt: true,
         expiresAt: true,
         modelId: true,
@@ -150,10 +130,9 @@ export class PromptCacheService {
     const active = allEntries.filter((e) => !e.expiresAt || e.expiresAt > now);
     const expired = allEntries.filter((e) => e.expiresAt && e.expiresAt <= now);
 
-    const totalHits = allEntries.reduce((sum, e) => sum + e.hits, 0);
+    const totalHits = allEntries.reduce((sum, e) => sum + e.hitCount, 0);
     const avgHits = allEntries.length > 0 ? totalHits / allEntries.length : 0;
 
-    // Group by model
     const byModel = new Map<string, number>();
     allEntries.forEach((e) => {
       byModel.set(e.modelId, (byModel.get(e.modelId) || 0) + 1);
@@ -169,34 +148,25 @@ export class PromptCacheService {
     };
   }
 
-  /**
-   * Get most popular cached prompts
-   */
   async getTopCached(limit: number = 10) {
     return this.prisma.promptCache.findMany({
       select: {
         prompt: true,
         modelId: true,
-        hits: true,
+        hitCount: true,
         createdAt: true,
-        lastAccessedAt: true,
+        lastUsedAt: true,
       },
-      orderBy: { hits: 'desc' },
+      orderBy: { hitCount: 'desc' },
       take: limit,
     });
   }
 
-  /**
-   * Hash prompt to create cache key
-   */
   private hashPrompt(prompt: string, modelId?: string): string {
     const content = modelId ? `${prompt}:${modelId}` : prompt;
     return createHash('sha256').update(content).digest('hex');
   }
 
-  /**
-   * Estimate cache savings
-   */
   async estimateSavings(period: 'day' | 'week' | 'month' = 'month') {
     const startDate = this.getStartDate(period);
 
@@ -204,27 +174,15 @@ export class PromptCacheService {
       where: {
         createdAt: { gte: startDate },
       },
-      include: {
-        model: true,
-      },
     });
 
     let totalSavings = 0;
     let totalRequestsAvoided = 0;
 
     for (const entry of cachedEntries) {
-      if (entry.hits > 0 && entry.model) {
-        // Calculate cost for the requests that hit cache
-        const costPerRequest =
-          ((entry.inputTokens / 1_000_000) * entry.model.costInput) +
-          ((entry.outputTokens / 1_000_000) * entry.model.costOutput);
-
-        // First request paid, subsequent hits are free
-        const requestsAvoided = entry.hits;
-        const savings = costPerRequest * requestsAvoided;
-
-        totalSavings += savings;
-        totalRequestsAvoided += requestsAvoided;
+      if (entry.hitCount > 0) {
+        totalSavings += entry.savedCost * entry.hitCount;
+        totalRequestsAvoided += entry.hitCount;
       }
     }
 
@@ -236,9 +194,6 @@ export class PromptCacheService {
     };
   }
 
-  /**
-   * Helper: Get start date for period
-   */
   private getStartDate(period: 'day' | 'week' | 'month'): Date {
     const now = new Date();
     switch (period) {

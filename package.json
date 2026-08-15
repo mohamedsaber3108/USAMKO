@@ -47,6 +47,15 @@
   },
   "homepage": "https://github.com/mohamedsaber3108/USAMKO#readme",
   "dependencies": {
-    "@prisma/client": "^6.2.0"
+    "@prisma/client": "^6.2.0",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^3.3.0",
+    "@nestjs/axios": "^4.0.0",
+    "@nestjs/core": "^11.0.0",
+    "rxjs": "^7.8.0",
+    "reflect-metadata": "^0.2.0",
+    "axios": "^1.7.0",
+    "class-validator": "^0.14.0",
+    "class-transformer": "^0.5.0"
   }
 }

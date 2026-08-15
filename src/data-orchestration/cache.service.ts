@@ -10,47 +10,41 @@ export class CacheService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Get cached result
-   */
   async get(key: {
     sourceSlug: string;
     operation: string;
     parameters: any;
   }): Promise<DataSourceResult | null> {
-    const hash = this.hashKey(key);
+    const cacheKey = this.hashKey(key);
 
     const cached = await this.prisma.dataCache.findUnique({
-      where: { key: hash },
+      where: { cacheKey },
     });
 
     if (!cached) {
       return null;
     }
 
-    // Check if expired
     const now = new Date();
     if (cached.expiresAt && cached.expiresAt < now) {
-      this.logger.debug(`Cache entry expired: ${hash.substring(0, 8)}...`);
-      // Clean up expired entry
-      await this.prisma.dataCache.delete({ where: { key: hash } });
+      this.logger.debug(`Cache entry expired: ${cacheKey.substring(0, 8)}...`);
+      await this.prisma.dataCache.delete({ where: { cacheKey } });
       return null;
     }
 
-    // Increment hit count
     await this.prisma.dataCache.update({
-      where: { key: hash },
-      data: { hits: { increment: 1 } },
+      where: { cacheKey },
+      data: {
+        hitCount: { increment: 1 },
+        lastUsedAt: now,
+      },
     });
 
     this.logger.log(`Cache HIT for ${key.sourceSlug}:${key.operation}`);
 
-    return cached.result as any;
+    return cached.data as any;
   }
 
-  /**
-   * Set cache entry
-   */
   async set(params: {
     key: {
       sourceSlug: string;
@@ -60,25 +54,32 @@ export class CacheService {
     result: DataSourceResult;
     ttl?: number;
   }): Promise<void> {
-    const hash = this.hashKey(params.key);
+    const cacheKey = this.hashKey(params.key);
     const now = new Date();
     const ttl = params.ttl || this.DEFAULT_TTL;
     const expiresAt = new Date(now.getTime() + ttl * 1000);
 
+    const recordCount = Array.isArray((params.result as any)?.records)
+      ? (params.result as any).records.length
+      : 0;
+
     await this.prisma.dataCache.upsert({
-      where: { key: hash },
+      where: { cacheKey },
       create: {
-        key: hash,
+        cacheKey,
         sourceSlug: params.key.sourceSlug,
         operation: params.key.operation,
         parameters: params.key.parameters as any,
-        result: params.result as any,
+        data: params.result as any,
+        recordCount,
         expiresAt,
-        hits: 0,
+        hitCount: 0,
       },
       update: {
-        result: params.result as any,
+        data: params.result as any,
+        recordCount,
         expiresAt,
+        lastUsedAt: now,
       },
     });
 
@@ -87,9 +88,6 @@ export class CacheService {
     );
   }
 
-  /**
-   * Clear cache for source
-   */
   async clearForSource(sourceSlug: string): Promise<number> {
     const result = await this.prisma.dataCache.deleteMany({
       where: { sourceSlug },
@@ -101,9 +99,6 @@ export class CacheService {
     return result.count;
   }
 
-  /**
-   * Clear expired entries
-   */
   async clearExpired(): Promise<number> {
     const now = new Date();
     const result = await this.prisma.dataCache.deleteMany({
@@ -116,22 +111,16 @@ export class CacheService {
     return result.count;
   }
 
-  /**
-   * Clear all cache
-   */
   async clearAll(): Promise<number> {
     const result = await this.prisma.dataCache.deleteMany({});
     this.logger.log(`Cleared all ${result.count} cache entries`);
     return result.count;
   }
 
-  /**
-   * Get cache statistics
-   */
   async getStatistics() {
     const allEntries = await this.prisma.dataCache.findMany({
       select: {
-        hits: true,
+        hitCount: true,
         sourceSlug: true,
         operation: true,
         createdAt: true,
@@ -147,17 +136,15 @@ export class CacheService {
       (e) => e.expiresAt && e.expiresAt <= now,
     );
 
-    const totalHits = allEntries.reduce((sum, e) => sum + e.hits, 0);
+    const totalHits = allEntries.reduce((sum, e) => sum + e.hitCount, 0);
     const avgHits =
       allEntries.length > 0 ? totalHits / allEntries.length : 0;
 
-    // Group by source
     const bySource = new Map<string, number>();
     allEntries.forEach((e) => {
       bySource.set(e.sourceSlug, (bySource.get(e.sourceSlug) || 0) + 1);
     });
 
-    // Group by operation
     const byOperation = new Map<string, number>();
     allEntries.forEach((e) => {
       byOperation.set(e.operation, (byOperation.get(e.operation) || 0) + 1);
@@ -174,26 +161,20 @@ export class CacheService {
     };
   }
 
-  /**
-   * Get top cached queries
-   */
   async getTopCached(limit: number = 10) {
     return this.prisma.dataCache.findMany({
       select: {
         sourceSlug: true,
         operation: true,
         parameters: true,
-        hits: true,
+        hitCount: true,
         createdAt: true,
       },
-      orderBy: { hits: 'desc' },
+      orderBy: { hitCount: 'desc' },
       take: limit,
     });
   }
 
-  /**
-   * Hash cache key
-   */
   private hashKey(key: {
     sourceSlug: string;
     operation: string;
@@ -203,9 +184,6 @@ export class CacheService {
     return createHash('sha256').update(content).digest('hex');
   }
 
-  /**
-   * Estimate cache hit rate
-   */
   async estimateHitRate(
     period: 'day' | 'week' | 'month' = 'month',
   ): Promise<{
@@ -215,22 +193,20 @@ export class CacheService {
   }> {
     const startDate = this.getStartDate(period);
 
-    // Get total queries in period
     const totalQueries = await this.prisma.dataQuery.count({
       where: {
         createdAt: { gte: startDate },
       },
     });
 
-    // Get cache entries created in period
     const cacheEntries = await this.prisma.dataCache.findMany({
       where: {
         createdAt: { gte: startDate },
       },
-      select: { hits: true },
+      select: { hitCount: true },
     });
 
-    const cacheHits = cacheEntries.reduce((sum, e) => sum + e.hits, 0);
+    const cacheHits = cacheEntries.reduce((sum, e) => sum + e.hitCount, 0);
 
     const hitRate =
       totalQueries > 0 ? (cacheHits / totalQueries) * 100 : 0;
@@ -242,9 +218,6 @@ export class CacheService {
     };
   }
 
-  /**
-   * Helper: Get start date for period
-   */
   private getStartDate(period: 'day' | 'week' | 'month'): Date {
     const now = new Date();
     switch (period) {
