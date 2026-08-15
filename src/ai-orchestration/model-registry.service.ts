@@ -123,6 +123,15 @@ export class ModelRegistryService implements OnModuleInit {
   }
 
   /**
+   * Get all models (including disabled)
+   */
+  async getAllModels(): Promise<AIModel[]> {
+    return this.prisma.aIModel.findMany({
+      orderBy: { priority: 'desc' },
+    });
+  }
+
+  /**
    * Get all enabled models
    */
   async getEnabledModels(): Promise<AIModel[]> {

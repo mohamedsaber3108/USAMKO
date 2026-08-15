@@ -47,7 +47,7 @@ export class FreeEmailFinderService {
     // Method 2: Clearbit Free Enrichment (50/month free)
     if (params.domain) {
       try {
-        const clearbitResult = await this.findWithClearbit(params);
+        const clearbitResult = await this.findWithClearbit({ ...params, domain: params.domain });
         if (clearbitResult) {
           results.push(clearbitResult);
           methods.push('clearbit-free');
@@ -60,7 +60,7 @@ export class FreeEmailFinderService {
     // Method 3: Company Website Scraping
     if (params.domain) {
       try {
-        const websiteResults = await this.scrapeCompanyWebsite(params);
+        const websiteResults = await this.scrapeCompanyWebsite({ ...params, domain: params.domain });
         results.push(...websiteResults);
         methods.push('website-scraping');
       } catch (error) {

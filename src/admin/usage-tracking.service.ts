@@ -52,7 +52,7 @@ export class UsageTrackingService {
     });
 
     // Get current usage and limit for this resource
-    const current = this.getCurrentUsage(usage, resource);
+    const current = this.getResourceUsage(usage, resource);
     const limit = this.getLimit(limits, resource);
 
     // No limit set = unlimited
@@ -294,9 +294,9 @@ export class UsageTrackingService {
   }
 
   /**
-   * Helper: Get current usage for resource
+   * Helper: Get current usage value for a specific resource
    */
-  private getCurrentUsage(usage: any, resource: ResourceType): number {
+  private getResourceUsage(usage: any, resource: ResourceType): number {
     switch (resource) {
       case ResourceType.LEADS:
         return usage.leadsCollected || 0;
