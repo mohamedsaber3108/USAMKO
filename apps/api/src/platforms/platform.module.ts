@@ -5,10 +5,6 @@ import { PrismaService } from '../prisma.service';
 import { SecurityModule } from '../security/security.module';
 import { PlatformService } from './platform.service';
 import { PlatformController } from './platform.controller';
-import { FacebookAdapter } from './adapters/facebook.adapter';
-import { InstagramAdapter } from './adapters/instagram.adapter';
-import { LinkedInAdapter } from './adapters/linkedin.adapter';
-import { TwitterAdapter } from './adapters/twitter.adapter';
 
 @Module({
   imports: [SecurityModule],
@@ -16,10 +12,6 @@ import { TwitterAdapter } from './adapters/twitter.adapter';
   providers: [
     PlatformService,
     PrismaService,
-    FacebookAdapter,
-    InstagramAdapter,
-    LinkedInAdapter,
-    TwitterAdapter,
   ],
   exports: [PlatformService],
 })
