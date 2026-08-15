@@ -18,7 +18,10 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
-import { User } from '../common/decorators/user.decorator';
+import { AuthGuard } from '@nestjs/passport';
+import { Req, Res } from '@nestjs/common';
+import { Response } from 'express';
+import { User} from '../common/decorators/user.decorator';
 import { Auth } from '../common/decorators/auth.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles, UserRole } from '../common/decorators/roles.decorator';
@@ -106,5 +109,37 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
+  }
+
+  // Google OAuth routes
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth(@Req() req) {
+    // Guard redirects to Google
+  }
+
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthCallback(@Auth() user: any, @Res() res: Response) {
+    const tokens = await this.authService.login(user);
+    // Redirect to frontend with tokens
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    res.redirect(`${frontendUrl}/auth/callback?token=${tokens.accessToken}&refreshToken=${tokens.refreshToken}`);
+  }
+
+  // GitHub OAuth routes
+  @Get('github')
+  @UseGuards(AuthGuard('github'))
+  async githubAuth(@Req() req) {
+    // Guard redirects to GitHub
+  }
+
+  @Get('github/callback')
+  @UseGuards(AuthGuard('github'))
+  async githubAuthCallback(@Auth() user: any, @Res() res: Response) {
+    const tokens = await this.authService.login(user);
+    // Redirect to frontend with tokens
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    res.redirect(`${frontendUrl}/auth/callback?token=${tokens.accessToken}&refreshToken=${tokens.refreshToken}`);
   }
 }

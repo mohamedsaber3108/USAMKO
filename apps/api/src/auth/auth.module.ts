@@ -7,8 +7,8 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
-// import { GoogleStrategy } from './strategies/google.strategy';
-// import { GithubStrategy } from './strategies/github.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
+import { GithubStrategy } from './strategies/github.strategy';
 import { PrismaService } from '../prisma.service';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
@@ -33,8 +33,8 @@ import { Reflector } from '@nestjs/core';
     LocalStrategy,
     JwtStrategy,
     JwtRefreshStrategy,
-    // GoogleStrategy,
-    // GithubStrategy,
+    GoogleStrategy,
+    GithubStrategy,
     RolesGuard,
     TenantGuard,
     Reflector,

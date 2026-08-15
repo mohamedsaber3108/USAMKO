@@ -18,6 +18,7 @@ const navigation = [
     items: [
       { name: 'Leads', href: '/leads', icon: 'Users' },
       { name: 'Lead Collection', href: '/leads/collect', icon: 'UserPlus' },
+      { name: 'Google Maps', href: '/leads/collect/maps', icon: 'MapPin' },
       { name: 'Research', href: '/research', icon: 'Search' },
       { name: 'Data Query', href: '/data', icon: 'Database' },
     ],
@@ -25,9 +26,17 @@ const navigation = [
   {
     label: 'Social Platforms',
     items: [
-      { name: 'Platforms', href: '/platforms', icon: 'Globe' },
+      { name: 'All Platforms', href: '/platforms', icon: 'Globe' },
+      { name: 'Facebook', href: '/platforms/facebook', icon: 'Globe' },
+      { name: 'Instagram', href: '/platforms/instagram', icon: 'Camera' },
+      { name: 'Twitter', href: '/platforms/twitter', icon: 'Twitter' },
       { name: 'LinkedIn', href: '/linkedin', icon: 'Linkedin' },
-      { name: 'Posts', href: '/posts/create', icon: 'Edit' },
+      { name: 'Telegram', href: '/platforms/telegram', icon: 'MessageCircle' },
+      { name: 'YouTube', href: '/platforms/youtube', icon: 'Video' },
+      { name: 'Pinterest', href: '/platforms/pinterest', icon: 'Pin' },
+      { name: 'Reddit', href: '/platforms/reddit', icon: 'MessageSquare' },
+      { name: 'VK', href: '/platforms/vk', icon: 'Globe' },
+      { name: 'Ask.fm', href: '/platforms/askfm', icon: 'HelpCircle' },
     ],
   },
   {
@@ -56,6 +65,8 @@ const navigation = [
   {
     label: 'System',
     items: [
+      { name: 'Chrome Extension', href: '/extension', icon: 'Puzzle' },
+      { name: 'Media Library', href: '/media', icon: 'Image' },
       { name: 'Notifications', href: '/notifications', icon: 'Bell' },
       { name: 'Settings', href: '/settings', icon: 'Settings' },
       { name: 'Teams', href: '/teams', icon: 'UsersRound' },
@@ -100,6 +111,16 @@ const iconMap: Record<string, JSX.Element> = {
   Lock: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />,
   ScrollText: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />,
   Activity: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M22 12h-4l-3 9L9 3l-3 9H2" />,
+  MapPin: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z" />,
+  Camera: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z M15 13a3 3 0 11-6 0 3 3 0 016 0z" />,
+  Twitter: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12a4 4 0 118 0 4 4 0 01-8 0zm0 0V8a4 4 0 018 0v4m0 0v2a2 2 0 104 0v-2M8 12v2a2 2 0 01-4 0v-2" />,
+  MessageCircle: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />,
+  Video: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />,
+  Pin: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />,
+  MessageSquare: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />,
+  HelpCircle: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />,
+  Puzzle: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />,
+  Image: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />,
 };
 
 function NavIcon({ name }: { name: string }) {
