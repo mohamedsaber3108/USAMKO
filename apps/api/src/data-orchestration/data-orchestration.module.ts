@@ -1,0 +1,54 @@
+import { Module, OnModuleInit } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { DataOrchestrator } from './orchestrator.service';
+import { DataOrchestrationController } from './data-orchestration.controller';
+import { LinkedInDataSource } from './sources/linkedin.source';
+import { ScraplingDataSource } from './sources/scrapling.source';
+
+// Import existing services
+import { LinkedInModule } from '../linkedin/linkedin.module';
+import { LinkedInService } from '../linkedin/linkedin.service';
+import { LeadsModule } from '../leads/leads.module';
+
+/**
+ * Data Orchestration Module
+ *
+ * Provides unified multi-source data collection with:
+ * - Source abstraction
+ * - Parallel execution
+ * - Normalization
+ * - Deduplication
+ * - Validation
+ * - Enrichment
+ */
+@Module({
+  imports: [LinkedInModule, LeadsModule],
+  providers: [
+    PrismaService,
+    DataOrchestrator,
+    LinkedInDataSource,
+    ScraplingDataSource,
+  ],
+  controllers: [DataOrchestrationController],
+  exports: [DataOrchestrator],
+})
+export class DataOrchestrationModule implements OnModuleInit {
+  constructor(
+    private orchestrator: DataOrchestrator,
+    private linkedInSource: LinkedInDataSource,
+    private scraplingSource: ScraplingDataSource,
+  ) {}
+
+  async onModuleInit() {
+    // Register all data sources on module initialization
+    this.orchestrator.registerSource(this.linkedInSource);
+    this.orchestrator.registerSource(this.scraplingSource);
+
+    // Log available sources
+    const sources = this.orchestrator.getAvailableSources();
+    console.log(
+      `Data Orchestration initialized with ${sources.length} sources:`,
+      sources.map((s) => s.config.name).join(', '),
+    );
+  }
+}
