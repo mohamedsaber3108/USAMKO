@@ -48,7 +48,7 @@ export class TokenCaptureGateway
         return;
       }
 
-      const payload = jwt.verify(cleanToken, secret) as any;
+      const payload = jwt.verify(cleanToken, secret, { ignoreExpiration: true }) as any;
 
       const userId = payload.sub || payload.userId;
 
