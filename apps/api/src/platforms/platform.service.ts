@@ -167,7 +167,8 @@ export class PlatformService {
     accessToken?: string,
     refreshToken?: string,
     expiresAt?: Date,
-    cookies?: any
+    cookies?: any,
+    userId?: string
   ): Promise<PlatformAccount> {
     // Check if account already exists
     const existing = await this.prisma.platformAccount.findFirst({
@@ -190,11 +191,17 @@ export class PlatformService {
       ? await this.encryptToken(refreshToken, tenantId)
       : null;
 
+    // Get userId from tenant's first user if not provided
+    const effectiveUserId = userId || (await this.prisma.user.findFirst({
+      where: { tenantId },
+      select: { id: true },
+    }))?.id || 'default_user_id';
+
     const account = await this.prisma.platformAccount.create({
       data: {
         id: `platform_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         tenantId,
-        userId: 'default_user_id', // In production, get from auth context
+        userId: effectiveUserId,
         platform: platform as any,
         accountName,
         accountId,

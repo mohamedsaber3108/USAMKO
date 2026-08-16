@@ -69,12 +69,20 @@ export default function PlatformsPage() {
             Manage your connected social media platforms
           </p>
         </div>
-        <button
-          onClick={loadPlatforms}
-          className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg"
-        >
-          Refresh
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => router.push('/platforms/add')}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg"
+          >
+            + Add Account
+          </button>
+          <button
+            onClick={loadPlatforms}
+            className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg"
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Stats */}

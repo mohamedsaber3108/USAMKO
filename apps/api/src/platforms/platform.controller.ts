@@ -66,24 +66,31 @@ export class PlatformController {
     @Body()
     dto: {
       platform: SocialPlatform;
-      username: string;
+      accountName?: string;
+      accountId?: string;
+      username?: string;
       displayName?: string;
       profileUrl?: string;
       accessToken?: string;
       refreshToken?: string;
       cookies?: any;
+      metadata?: any;
     },
     @Auth() user: any
   ) {
     return this.platformService.createAccount(
       user.tenantId,
       dto.platform,
+      dto.accountName || dto.username || `${dto.platform} Account`,
+      dto.accountId || `${dto.platform.toLowerCase()}_${Date.now()}`,
       dto.username,
       dto.displayName,
       dto.profileUrl,
       dto.accessToken,
       dto.refreshToken,
-      dto.cookies
+      undefined, // expiresAt
+      dto.cookies,
+      user.userId // Pass the authenticated user's ID
     );
   }
 
