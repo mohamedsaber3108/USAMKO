@@ -33,7 +33,7 @@ if (process.env.GITHUB_CLIENT_ID) {
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
       signOptions: {
-        expiresIn: process.env.JWT_EXPIRES_IN || '15m',
+        expiresIn: process.env.JWT_EXPIRES_IN || '7d',
       },
     }),
     TenantModule,
