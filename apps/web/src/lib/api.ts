@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 class ApiClient {
   private token: string | null = null;
@@ -11,7 +11,8 @@ class ApiClient {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string>),
     };
-    if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+    const token = this.token || (typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null);
+    if (token) headers['Authorization'] = `Bearer ${token}`;
 
     const res = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
     if (!res.ok) {
