@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, Logger } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -14,6 +14,18 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
 import { TenantModule } from '../tenant/tenant.module';
 import { Reflector } from '@nestjs/core';
+
+const oauthProviders = [];
+if (process.env.GOOGLE_CLIENT_ID) {
+  oauthProviders.push(GoogleStrategy);
+} else {
+  Logger.warn('Google OAuth not configured (GOOGLE_CLIENT_ID missing)', 'AuthModule');
+}
+if (process.env.GITHUB_CLIENT_ID) {
+  oauthProviders.push(GithubStrategy);
+} else {
+  Logger.warn('GitHub OAuth not configured (GITHUB_CLIENT_ID missing)', 'AuthModule');
+}
 
 @Module({
   imports: [
@@ -33,8 +45,7 @@ import { Reflector } from '@nestjs/core';
     LocalStrategy,
     JwtStrategy,
     JwtRefreshStrategy,
-    GoogleStrategy,
-    GithubStrategy,
+    ...oauthProviders,
     RolesGuard,
     TenantGuard,
     Reflector,
