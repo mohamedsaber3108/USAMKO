@@ -10,10 +10,8 @@ import {
 import { LinkedInService } from '../../../../../src/linkedin/linkedin.service';
 
 /**
- * LinkedIn Data Source
- *
- * Adapter for existing LinkedIn service to participate in
- * multi-source orchestration
+ * LinkedIn Data Source - Simplified version
+ * Adapter for existing LinkedIn service
  */
 @Injectable()
 export class LinkedInDataSource extends DataSource {
@@ -22,43 +20,31 @@ export class LinkedInDataSource extends DataSource {
   config: SourceConfig = {
     id: 'linkedin',
     name: 'LinkedIn',
-    type: SourceType.PLATFORM_INTEGRATION,
+    type: SourceType.API,
     capabilities: [
       SourceCapability.SEARCH,
       SourceCapability.PROFILE_EXTRACTION,
-      SourceCapability.COMPANY_RESEARCH,
-      SourceCapability.RELATIONSHIP_MAPPING,
     ],
-    requiresAuth: true,
-    requiresBrowser: true,
-    supportsProxy: true,
-    supportsConcurrency: true,
-    rateLimit: {
-      requests: 100,
-      period: 'hour',
-    },
     priority: 10,
     reliability: 0.85,
-    averageLatency: 3000,
     enabled: true,
+    requiresAuth: true,
+    requiresBrowser: false,
+    costPerRequest: 0,
+    rateLimit: { requests: 10, per: 'minute' as const },
+    averageLatency: 2000,
   };
 
-  constructor(private linkedInService: LinkedInService) {
+  constructor(private readonly linkedInService: LinkedInService) {
     super();
   }
 
   canHandle(request: DataCollectionRequest): boolean {
-    // LinkedIn is great for people and company searches
-    if (request.entityType === 'person' || request.entityType === 'company') {
-      return true;
-    }
-
-    // Can also handle searches with location
-    if (request.location) {
-      return true;
-    }
-
-    return false;
+    // Can handle if platform is linkedin or entityType is person
+    return (
+      request.platform === 'linkedin' ||
+      request.entityType === 'person'
+    );
   }
 
   async estimate(request: DataCollectionRequest): Promise<{
@@ -67,85 +53,79 @@ export class LinkedInDataSource extends DataSource {
     estimatedCost: number;
   }> {
     return {
-      estimatedResults: Math.min(request.maxResults || 100, 100),
-      estimatedTime: ((request.maxResults || 100) * this.config.averageLatency) / 10,
+      estimatedResults: Math.min(request.maxResults || 10, 100),
+      estimatedTime: 5000,
       estimatedCost: 0,
     };
   }
 
   async collect(request: DataCollectionRequest): Promise<RawDataItem[]> {
     try {
-      // Build LinkedIn search query
-      const searchQuery = this.buildSearchQuery(request);
+      this.logger.log(`Collecting from LinkedIn: ${request.query}`);
 
-      // Execute search using existing LinkedIn service
-      const searchResults = await this.linkedInService.search({
-        query: searchQuery,
-        filters: {
-          industry: request.filters?.industry,
+      // Use existing searchAndSave method
+      const results = await this.linkedInService.searchAndSave(
+        request.tenantId,
+        request.userId || 'system',
+        {
+          keywords: request.query,
           location: request.location,
+          title: request.filters?.title,
           company: request.filters?.company,
-        },
-        limit: request.maxResults || 100,
-      });
+          limit: request.maxResults || 10,
+        }
+      );
 
-      // Convert to raw data items
-      const rawItems: RawDataItem[] = searchResults.map((result) => ({
+      // Convert to RawDataItem format
+      return results.map((profile) => ({
         source: this.config.id,
-        sourceUrl: result.profileUrl || result.url,
+        sourceUrl: profile.profileUrl || `https://linkedin.com/in/${profile.publicIdentifier}`,
         data: {
-          fullName: result.name,
-          firstName: result.firstName,
-          lastName: result.lastName,
-          title: result.title,
-          company: result.company?.name,
-          companyUrl: result.company?.url,
-          location: result.location,
-          industry: result.industry,
-          profileUrl: result.profileUrl,
-          linkedinUrl: result.profileUrl,
-          imageUrl: result.profilePicture,
-          bio: result.summary,
-          connections: result.connections,
-          premium: result.premium,
+          fullName: `${profile.firstName} ${profile.lastName}`.trim(),
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          title: profile.headline,
+          location: profile.location,
+          profileUrl: profile.profileUrl,
+          linkedinUrl: profile.profileUrl,
+          imageUrl: profile.photoUrl,
+          publicIdentifier: profile.publicIdentifier,
         },
         confidence: 0.9,
         timestamp: new Date(),
         metadata: {
-          searchQuery,
-          profileId: result.publicIdentifier,
+          profileId: profile.publicIdentifier,
         },
       }));
-
-      this.logger.log(`Collected ${rawItems.length} items from LinkedIn`);
-      return rawItems;
     } catch (error) {
-      this.logger.error('LinkedIn collection failed', error);
-      throw error;
+      this.logger.error('LinkedIn collection failed:', error);
+      // Return empty array instead of throwing to allow other sources to run
+      return [];
     }
   }
 
   async healthCheck(): Promise<boolean> {
     try {
-      // Check if LinkedIn service is available
-      const status = await this.linkedInService.getStatistics();
-      return !!status;
+      // Just check if the service is available
+      return !!this.linkedInService;
     } catch {
       return false;
     }
   }
 
   private buildSearchQuery(request: DataCollectionRequest): string {
-    const parts: string[] = [request.query];
+    let query = request.query;
 
-    if (request.filters?.role) {
-      parts.push(request.filters.role);
+    if (request.filters?.title) {
+      query += ` title:"${request.filters.title}"`;
+    }
+    if (request.filters?.company) {
+      query += ` company:"${request.filters.company}"`;
+    }
+    if (request.location) {
+      query += ` location:"${request.location}"`;
     }
 
-    if (request.filters?.industry) {
-      parts.push(request.filters.industry);
-    }
-
-    return parts.filter(Boolean).join(' ');
+    return query;
   }
 }

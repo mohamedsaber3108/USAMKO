@@ -31,7 +31,7 @@ import { LinkedInModule } from '../../../src/linkedin/linkedin.module';
 import { LinkoutModule } from '../../../src/linkout/linkout.module';
 import { AdminModule } from '../../../src/admin/admin.module';
 import { AIOrchestrationModule } from '../../../src/ai-orchestration/ai-orchestration.module';
-// import { DataOrchestrationModule } from './data-orchestration/data-orchestration.module'; // Disabled - needs refactoring
+import { DataOrchestrationModule } from './data-orchestration/data-orchestration.module';
 
 @Module({
   imports: [
@@ -75,7 +75,7 @@ import { AIOrchestrationModule } from '../../../src/ai-orchestration/ai-orchestr
     LinkoutModule, // 100% FREE email finder
     AdminModule, // Admin control center
     AIOrchestrationModule, // AI model routing & cost optimization
-    // DataOrchestrationModule, // Natural language data collection - Disabled, needs refactoring
+    DataOrchestrationModule, // Natural language data collection
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

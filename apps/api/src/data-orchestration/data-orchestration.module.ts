@@ -9,7 +9,6 @@ import { AICollectionOrchestratorService } from './ai-collection-orchestrator.se
 // Import existing services
 import { LinkedInModule } from '../../../../src/linkedin/linkedin.module';
 import { LinkedInService } from '../../../../src/linkedin/linkedin.service';
-import { LeadsModule } from '../../../../src/leads/leads.module';
 
 /**
  * Data Orchestration Module
@@ -23,7 +22,7 @@ import { LeadsModule } from '../../../../src/leads/leads.module';
  * - Enrichment
  */
 @Module({
-  imports: [LinkedInModule, LeadsModule],
+  imports: [LinkedInModule],
   providers: [
     PrismaService,
     DataOrchestrator,

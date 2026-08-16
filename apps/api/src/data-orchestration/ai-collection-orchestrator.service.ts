@@ -235,11 +235,11 @@ Provide a brief 2-3 sentence summary highlighting key findings and data quality.
         userId: request.userId,
         platform: parsed.platform,
         query: parsed.searchQuery,
+        entityType: 'person' as const, // Required field
         dataType: parsed.intent,
-        filters: {
-          ...parsed.filters,
-          limit: parsed.limit || 10,
-        },
+        maxResults: parsed.limit || 10,
+        location: parsed.filters.location,
+        filters: parsed.filters,
         priority: 'normal' as const,
         qualityThreshold: 70,
         deduplication: true,
@@ -250,16 +250,16 @@ Provide a brief 2-3 sentence summary highlighting key findings and data quality.
       const collectionResult = await this.dataOrchestrator.collect(collectionRequest);
 
       // Step 4: Generate AI summary
-      const summary = await this.summarizeResults(request.query, collectionResult.normalizedData);
+      const summary = await this.summarizeResults(request.query, collectionResult.items);
 
       const executionTime = Date.now() - startTime;
 
       return {
         query: request.query,
         understanding: `Intent: ${parsed.intent}, Platform: ${parsed.platform}${Object.keys(parsed.filters).length > 0 ? ', Filters: ' + JSON.stringify(parsed.filters) : ''}`,
-        sources: collectionResult.metadata.sourcesUsed,
-        totalResults: collectionResult.normalizedData.length,
-        results: collectionResult.normalizedData,
+        sources: collectionResult.sourceResults.map(sr => sr.sourceId),
+        totalResults: collectionResult.items.length,
+        results: collectionResult.items,
         executionTime,
         summary,
       };
