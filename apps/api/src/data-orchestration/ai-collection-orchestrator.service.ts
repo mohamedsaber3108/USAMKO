@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DataOrchestrationService } from './orchestrator.service';
+import { DataOrchestrator } from './orchestrator.service';
 import {
   BedrockRuntimeClient,
   InvokeModelCommand,
@@ -29,7 +29,7 @@ export class AICollectionOrchestratorService {
   private readonly useDemoMode: boolean;
 
   constructor(
-    private readonly dataOrchestrator: DataOrchestrationService,
+    private readonly dataOrchestrator: DataOrchestrator,
   ) {
     // Initialize AWS Bedrock client
     const region = process.env.AWS_REGION || 'us-east-1';

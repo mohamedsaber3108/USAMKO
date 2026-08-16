@@ -18,7 +18,7 @@ import { Tenant as TenantDecorator } from '../common/decorators/tenant.decorator
 import { User as UserDecorator } from '../common/decorators/user.decorator';
 import { DataOrchestrator } from './orchestrator.service';
 import { DataCollectionRequest, SourceCapability } from './sources/source.interface';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../prisma.service';
 import { AICollectionOrchestratorService } from './ai-collection-orchestrator.service';
 
 // DTOs

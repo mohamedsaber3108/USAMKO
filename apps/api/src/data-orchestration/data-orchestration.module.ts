@@ -1,5 +1,5 @@
 import { Module, OnModuleInit } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../prisma.service';
 import { DataOrchestrator } from './orchestrator.service';
 import { DataOrchestrationController } from './data-orchestration.controller';
 import { LinkedInDataSource } from './sources/linkedin.source';
@@ -7,9 +7,9 @@ import { ScraplingDataSource } from './sources/scrapling.source';
 import { AICollectionOrchestratorService } from './ai-collection-orchestrator.service';
 
 // Import existing services
-import { LinkedInModule } from '../linkedin/linkedin.module';
-import { LinkedInService } from '../linkedin/linkedin.service';
-import { LeadsModule } from '../leads/leads.module';
+import { LinkedInModule } from '../../../../src/linkedin/linkedin.module';
+import { LinkedInService } from '../../../../src/linkedin/linkedin.service';
+import { LeadsModule } from '../../../../src/leads/leads.module';
 
 /**
  * Data Orchestration Module

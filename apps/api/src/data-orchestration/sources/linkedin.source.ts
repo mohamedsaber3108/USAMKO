@@ -7,7 +7,7 @@ import {
   DataCollectionRequest,
   RawDataItem,
 } from './source.interface';
-import { LinkedInService } from '../../linkedin/linkedin.service';
+import { LinkedInService } from '../../../../../src/linkedin/linkedin.service';
 
 /**
  * LinkedIn Data Source
