@@ -67,6 +67,7 @@ const navigation = [
     items: [
       { name: 'Chrome Extension', href: '/extension', icon: 'Puzzle' },
       { name: 'Media Library', href: '/media', icon: 'Image' },
+      { name: 'Automation', href: '/automation', icon: 'Cpu' },
       { name: 'Notifications', href: '/notifications', icon: 'Bell' },
       { name: 'Settings', href: '/settings', icon: 'Settings' },
       { name: 'Teams', href: '/teams', icon: 'UsersRound' },

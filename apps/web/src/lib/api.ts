@@ -58,6 +58,9 @@ class ApiClient {
   async resetPassword(token: string, password: string) {
     return this.request('/auth/password-reset', { method: 'POST', body: JSON.stringify({ token, password }) });
   }
+  async forgotPassword(email: string) {
+    return this.request('/auth/password-reset/request', { method: 'POST', body: JSON.stringify({ email }) });
+  }
 
   // ─── Campaigns ──────────────────────────────────────────
   async getCampaigns(params?: Record<string, string>) {
@@ -92,6 +95,9 @@ class ApiClient {
   }
   async getCampaignAnalytics(id: string) {
     return this.request(`/campaigns/${id}/analytics`);
+  }
+  async cloneCampaign(id: string, data: any) {
+    return this.request(`/campaigns/${id}/clone`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   // ─── Platforms ──────────────────────────────────────────
@@ -146,6 +152,22 @@ class ApiClient {
     return this.request(`/automation/sessions/${sessionId}/screenshot`, { method: 'POST' });
   }
   async getAutomationStats() { return this.request('/automation/stats'); }
+  async getAutomationSessions() { return this.request('/automation/sessions'); }
+  async createAutomationSession(data: any) {
+    return this.request('/automation/sessions', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async navigateAutomation(sessionId: string, url: string) {
+    return this.request(`/automation/sessions/${sessionId}/navigate`, { method: 'POST', body: JSON.stringify({ url }) });
+  }
+  async screenshotAutomation(sessionId: string) {
+    return this.request(`/automation/sessions/${sessionId}/screenshot`, { method: 'POST' });
+  }
+  async executeAutomationScript(sessionId: string, script: string) {
+    return this.request(`/automation/sessions/${sessionId}/execute`, { method: 'POST', body: JSON.stringify({ script }) });
+  }
+  async closeAutomationSession(sessionId: string) {
+    return this.request(`/automation/sessions/${sessionId}`, { method: 'DELETE' });
+  }
 
   // ─── AI ─────────────────────────────────────────────────
   async getAiStatus() { return this.request('/ai/status'); }
@@ -243,6 +265,16 @@ class ApiClient {
   async collectLeads(data: { source: string; query: string; location?: string; limit?: number }) {
     return this.request('/leads/collect', { method: 'POST', body: JSON.stringify(data) });
   }
+  async collectMapsLeads(data: { searchQuery: string; location: string; maxResults: number }) {
+    return this.request('/leads/collect/maps', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async enrichLeads(leadIds: string[]) {
+    return this.request('/leads/enrich', { method: 'POST', body: JSON.stringify({ leadIds }) });
+  }
+  async importLeads(leads: any[]) {
+    return this.request('/leads/import', { method: 'POST', body: JSON.stringify({ leads }) });
+  }
+  async getLeadCollections() { return this.request('/leads/collections'); }
 
   // ─── Workflows ──────────────────────────────────────────
   async getWorkflows() { return this.request('/workflows'); }
