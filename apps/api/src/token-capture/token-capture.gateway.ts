@@ -7,7 +7,9 @@ import {
 import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { TokenCaptureService } from './token-capture.service';
+import { PrismaService } from '../prisma.service';
 import { parse } from 'url';
+import { jwtConstants } from '../auth/constants';
 
 @WebSocketGateway({ path: '/token-capture' })
 export class TokenCaptureGateway
@@ -22,6 +24,7 @@ export class TokenCaptureGateway
   constructor(
     private readonly jwtService: JwtService,
     private readonly tokenCaptureService: TokenCaptureService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async handleConnection(client: any, ...args: any[]) {
@@ -37,14 +40,23 @@ export class TokenCaptureGateway
       }
 
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.JWT_SECRET || 'your-jwt-secret',
+        secret: jwtConstants.secret,
       });
 
       const userId = payload.sub || payload.userId;
-      const tenantId = payload.tenantId;
+
+      // Resolve tenantId - it may not be in the JWT payload
+      let tenantId = payload.tenantId;
+      if (!tenantId && userId) {
+        const user = await this.prisma.user.findUnique({
+          where: { id: userId },
+          select: { tenantId: true },
+        });
+        tenantId = user?.tenantId || userId;
+      }
 
       this.clients.set(client, { userId, tenantId });
-      this.logger.log(`Client connected: userId=${userId}`);
+      this.logger.log(`Client connected: userId=${userId}, tenantId=${tenantId}`);
 
       this.send(client, 'connection_status', {
         connected: true,
