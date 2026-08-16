@@ -72,10 +72,13 @@ export default function SettingsPage() {
     }
 
     try {
-      // Note: The backend would need an update profile endpoint
-      // For now, this is a placeholder for the UI
-      alert('Profile updated! (Backend integration pending)');
+      await api.updateSettings({ name: profileName });
+      alert('Profile updated successfully!');
       setEditingProfile(false);
+      // Update local user object
+      if (user) {
+        user.name = profileName;
+      }
     } catch (err: any) {
       alert('Failed to update profile: ' + err.message);
     }

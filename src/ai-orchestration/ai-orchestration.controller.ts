@@ -17,7 +17,7 @@ import { TaskClassifierService } from './task-classifier.service';
 import { JwtAuthGuard } from '../../apps/api/src/auth/guards/jwt-auth.guard';
 
 @UseGuards(JwtAuthGuard)
-@Controller('ai')
+@Controller('ai-orchestration')
 export class AIOrchestrationController {
   private readonly logger = new Logger(AIOrchestrationController.name);
 
