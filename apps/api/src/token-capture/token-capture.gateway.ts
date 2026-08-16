@@ -5,11 +5,10 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { TokenCaptureService } from './token-capture.service';
 import { PrismaService } from '../prisma.service';
 import { parse } from 'url';
-import { jwtConstants } from '../auth/constants';
+import * as jwt from 'jsonwebtoken';
 
 @WebSocketGateway({ path: '/token-capture' })
 export class TokenCaptureGateway
@@ -22,7 +21,6 @@ export class TokenCaptureGateway
   private readonly clients = new Map<any, { userId: string; tenantId: string }>();
 
   constructor(
-    private readonly jwtService: JwtService,
     private readonly tokenCaptureService: TokenCaptureService,
     private readonly prisma: PrismaService,
   ) {}
@@ -39,13 +37,19 @@ export class TokenCaptureGateway
         return;
       }
 
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: jwtConstants.secret,
-      });
+      const secret = process.env.JWT_SECRET;
+      this.logger.log(`Verifying token (${token.substring(0, 20)}...) with secret (${secret?.substring(0, 6)}...)`);
+
+      if (!secret) {
+        this.logger.error('JWT_SECRET not found in environment!');
+        client.close(1008, 'Server configuration error');
+        return;
+      }
+
+      const payload = jwt.verify(token, secret) as any;
 
       const userId = payload.sub || payload.userId;
 
-      // Resolve tenantId - it may not be in the JWT payload
       let tenantId = payload.tenantId;
       if (!tenantId && userId) {
         const user = await this.prisma.user.findUnique({
@@ -68,7 +72,7 @@ export class TokenCaptureGateway
 
       client.on('message', (raw: any) => this.handleMessage(client, raw));
     } catch (error) {
-      this.logger.error('Auth failed:', error.message);
+      this.logger.error(`Auth failed: ${error.message}`);
       client.close(1008, 'Authentication failed');
     }
   }
