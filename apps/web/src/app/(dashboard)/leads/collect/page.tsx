@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import api from '@/lib/api';
 
 export default function CollectLeadsPage() {
   const router = useRouter();
@@ -21,19 +22,14 @@ export default function CollectLeadsPage() {
   const handleCollect = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/leads/collect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+      const data = await api.collectLeads({
+        source: formData.source,
+        query: `${formData.role} ${formData.industry} ${formData.company}`.trim(),
+        location: formData.location,
+        limit: formData.maxResults,
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        alert(`Successfully collected ${data.created} leads!`);
-        router.push('/leads');
-      } else {
-        alert('Failed to collect leads');
-      }
+      alert(`Successfully collected ${data.created || 0} leads!`);
+      router.push('/leads');
     } catch (error) {
       console.error('Collection error:', error);
       alert('An error occurred');

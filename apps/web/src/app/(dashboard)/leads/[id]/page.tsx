@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import api from '@/lib/api';
 
 export default function LeadDetailPage() {
   const params = useParams();
@@ -18,11 +19,8 @@ export default function LeadDetailPage() {
 
   const fetchLead = async (id: string) => {
     try {
-      const response = await fetch(`/api/leads/${id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setLead(data);
-      }
+      const data = await api.getLead(id);
+      setLead(data);
     } catch (error) {
       console.error('Failed to fetch lead:', error);
     } finally {

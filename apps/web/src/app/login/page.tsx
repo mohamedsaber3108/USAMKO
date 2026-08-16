@@ -3,24 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-
-interface LoginResponse {
-  accessToken: string;
-  refreshToken: string;
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    role: string;
-  };
-}
-
-interface ErrorResponse {
-  message?: string;
-  user?: {
-    message?: string;
-  };
-}
+import { useAuth } from '@/lib/auth-context';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -28,6 +11,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,30 +19,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data: LoginResponse | ErrorResponse = await response.json();
-
-      if (!response.ok) {
-        const errorMessage =
-          (data as ErrorResponse).user?.message ||
-          (data as ErrorResponse).message ||
-          'Login failed';
-        throw new Error(errorMessage);
-      }
-
-      // Store tokens
-      localStorage.setItem('accessToken', (data as LoginResponse).accessToken);
-      localStorage.setItem('refreshToken', (data as LoginResponse).refreshToken);
-      localStorage.setItem('user', JSON.stringify((data as LoginResponse).user));
-
-      // Redirect to dashboard
+      await login(email, password);
       router.push('/dashboard');
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred during login';
@@ -179,7 +140,7 @@ export default function LoginPage() {
                 <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Remember me</span>
               </label>
               <Link
-                href="/forgot-password"
+                href="/auth/forgot-password"
                 className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
               >
                 Forgot password?

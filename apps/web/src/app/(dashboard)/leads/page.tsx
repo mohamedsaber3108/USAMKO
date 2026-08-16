@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import api from '@/lib/api';
 
 interface Lead {
   id: string;
@@ -33,13 +34,12 @@ export default function LeadsPage() {
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      if (filters.source) params.append('source', filters.source);
-      if (filters.status) params.append('status', filters.status);
-      if (filters.minScore) params.append('minScore', filters.minScore);
+      const params: Record<string, string> = {};
+      if (filters.source) params.source = filters.source;
+      if (filters.status) params.status = filters.status;
+      if (filters.minScore) params.minScore = filters.minScore;
 
-      const response = await fetch(`/api/leads?${params.toString()}`);
-      const data = await response.json();
+      const data = await api.getLeads(params);
       setLeads(data.leads || []);
     } catch (error) {
       console.error('Failed to fetch leads:', error);

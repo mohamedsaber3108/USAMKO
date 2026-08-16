@@ -3,24 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-
-interface RegisterResponse {
-  accessToken: string;
-  refreshToken: string;
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    role: string;
-  };
-}
-
-interface ErrorResponse {
-  message?: string;
-  user?: {
-    message?: string;
-  };
-}
+import api from '@/lib/api';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -35,60 +18,24 @@ export default function RegisterPage() {
     e.preventDefault();
     setError('');
 
-    // Validate passwords match
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
-    // Validate password strength
-    if (password.length < 12) {
-      setError('Password must be at least 12 characters');
-      return;
-    }
-
-    if (!/[A-Z]/.test(password)) {
-      setError('Password must contain at least one uppercase letter');
-      return;
-    }
-
-    if (!/[a-z]/.test(password)) {
-      setError('Password must contain at least one lowercase letter');
-      return;
-    }
-
-    if (!/[0-9]/.test(password)) {
-      setError('Password must contain at least one number');
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, email, password }),
-      });
-
-      const data: RegisterResponse | ErrorResponse = await response.json();
-
-      if (!response.ok) {
-        const errorMessage =
-          (data as ErrorResponse).user?.message ||
-          (data as ErrorResponse).message ||
-          'Registration failed';
-        throw new Error(errorMessage);
-      }
-
-      // Store tokens
-      localStorage.setItem('accessToken', (data as RegisterResponse).accessToken);
-      localStorage.setItem('refreshToken', (data as RegisterResponse).refreshToken);
-      localStorage.setItem('user', JSON.stringify((data as RegisterResponse).user));
-
-      // Redirect to dashboard
+      const data = await api.register({ name, email, password });
+      api.setToken(data.accessToken);
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('refreshToken', data.refreshToken);
+      localStorage.setItem('user', JSON.stringify(data.user));
       router.push('/dashboard');
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred during registration';
