@@ -5,11 +5,13 @@ import {
   Body,
   Param,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { LinkedInService } from './linkedin.service';
 import { LinkedInProfilesService } from './linkedin-profiles.service';
 import { LinkedInMessagesService } from './linkedin-messages.service';
+import { LinkedInSenderService } from './linkedin-sender.service';
 
 import { JwtAuthGuard } from '../../apps/api/src/auth/guards/jwt-auth.guard';
 
@@ -20,6 +22,7 @@ export class LinkedInController {
     private readonly linkedinService: LinkedInService,
     private readonly profilesService: LinkedInProfilesService,
     private readonly messagesService: LinkedInMessagesService,
+    private readonly senderService: LinkedInSenderService,
   ) {}
 
   /**
@@ -186,5 +189,82 @@ export class LinkedInController {
     @Query('userId') userId: string,
   ) {
     return this.linkedinService.getActiveSession(tenantId, userId);
+  }
+
+  // ─── Sender Campaign Endpoints ─────────────────────────
+
+  /**
+   * Create a new send campaign
+   */
+  @Post('sender/campaigns')
+  async createCampaign(
+    @Req() req: any,
+    @Body() body: {
+      name: string;
+      messageTemplate: string;
+      contacts: { firstName: string; profileUrl: string }[];
+      delayMin?: number;
+      delayMax?: number;
+    },
+  ) {
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    return this.senderService.createCampaign(tenantId, userId, body);
+  }
+
+  /**
+   * Get all campaigns for user
+   */
+  @Get('sender/campaigns')
+  async getCampaigns(@Req() req: any) {
+    return this.senderService.getCampaigns(req.user?.tenantId, req.user?.id);
+  }
+
+  /**
+   * Get campaign by ID
+   */
+  @Get('sender/campaigns/:id')
+  async getCampaignById(@Req() req: any, @Param('id') id: string) {
+    return this.senderService.getCampaign(req.user?.tenantId, id);
+  }
+
+  /**
+   * Get campaign live status
+   */
+  @Get('sender/campaigns/:id/status')
+  async getCampaignStatus(@Param('id') id: string) {
+    return this.senderService.getCampaignStatus(id) || { status: 'unknown' };
+  }
+
+  /**
+   * Start a campaign
+   */
+  @Post('sender/campaigns/:id/start')
+  async startCampaign(@Req() req: any, @Param('id') id: string) {
+    return this.senderService.startCampaign(req.user?.tenantId, req.user?.id, id);
+  }
+
+  /**
+   * Pause a campaign
+   */
+  @Post('sender/campaigns/:id/pause')
+  async pauseCampaign(@Param('id') id: string) {
+    return this.senderService.pauseCampaign(id);
+  }
+
+  /**
+   * Store LinkedIn session cookies (from browser login)
+   */
+  @Post('sender/save-session')
+  async saveSenderSession(
+    @Req() req: any,
+    @Body() body: { cookies: string; userAgent?: string },
+  ) {
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    return this.linkedinService.createSession(tenantId, userId, {
+      cookies: body.cookies,
+      userAgent: body.userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    });
   }
 }

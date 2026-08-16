@@ -485,6 +485,19 @@ class ApiClient {
   }
   async getActiveLinkedInSession() { return this.request('/linkedin/session/active'); }
 
+  // ─── LinkedIn Sender ────────────────────────────────────
+  async createSenderCampaign(data: { name: string; messageTemplate: string; contacts: { firstName: string; profileUrl: string }[]; delayMin?: number; delayMax?: number }) {
+    return this.request('/linkedin/sender/campaigns', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async getSenderCampaigns() { return this.request('/linkedin/sender/campaigns'); }
+  async getSenderCampaign(id: string) { return this.request(`/linkedin/sender/campaigns/${id}`); }
+  async getSenderCampaignStatus(id: string) { return this.request(`/linkedin/sender/campaigns/${id}/status`); }
+  async startSenderCampaign(id: string) { return this.request(`/linkedin/sender/campaigns/${id}/start`, { method: 'POST' }); }
+  async pauseSenderCampaign(id: string) { return this.request(`/linkedin/sender/campaigns/${id}/pause`, { method: 'POST' }); }
+  async saveSenderSession(data: { cookies: string; userAgent?: string }) {
+    return this.request('/linkedin/sender/save-session', { method: 'POST', body: JSON.stringify(data) });
+  }
+
   // ─── Linkout (Email Finder) ─────────────────────────────
   async findEmailLinkout(data: { firstName: string; lastName: string; company: string; domain?: string }) {
     return this.request('/linkout/find-email', { method: 'POST', body: JSON.stringify(data) });

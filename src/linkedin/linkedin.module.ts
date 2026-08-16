@@ -4,6 +4,7 @@ import { LinkedInService } from './linkedin.service';
 import { LinkedInProfilesService } from './linkedin-profiles.service';
 import { LinkedInSessionsService } from './linkedin-sessions.service';
 import { LinkedInMessagesService } from './linkedin-messages.service';
+import { LinkedInSenderService } from './linkedin-sender.service';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
@@ -14,12 +15,14 @@ import { PrismaModule } from '../prisma/prisma.module';
     LinkedInProfilesService,
     LinkedInSessionsService,
     LinkedInMessagesService,
+    LinkedInSenderService,
   ],
   exports: [
     LinkedInService,
     LinkedInProfilesService,
     LinkedInSessionsService,
     LinkedInMessagesService,
+    LinkedInSenderService,
   ],
 })
 export class LinkedInModule {}

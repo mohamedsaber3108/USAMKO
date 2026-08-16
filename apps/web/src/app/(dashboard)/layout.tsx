@@ -31,6 +31,7 @@ const navigation = [
       { name: 'Instagram', href: '/platforms/instagram', icon: 'Camera' },
       { name: 'Twitter', href: '/platforms/twitter', icon: 'Twitter' },
       { name: 'LinkedIn', href: '/linkedin', icon: 'Linkedin' },
+      { name: 'LinkedIn Sender', href: '/linkedin/sender', icon: 'Send' },
       { name: 'Telegram', href: '/platforms/telegram', icon: 'MessageCircle' },
       { name: 'YouTube', href: '/platforms/youtube', icon: 'Video' },
       { name: 'Pinterest', href: '/platforms/pinterest', icon: 'Pin' },
