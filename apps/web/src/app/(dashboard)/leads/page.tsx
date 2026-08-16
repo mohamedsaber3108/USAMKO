@@ -8,10 +8,16 @@ import api from '@/lib/api';
 interface Lead {
   id: string;
   fullName: string;
+  firstName: string;
+  lastName: string;
   email: string;
+  phone: string;
   title: string;
   company: { name: string } | null;
   source: string;
+  sourceUrl: string;
+  linkedinUrl: string;
+  location: string;
   score: number;
   status: string;
   createdAt: string;
@@ -48,16 +54,85 @@ export default function LeadsPage() {
     }
   };
 
+  const downloadCSV = () => {
+    if (leads.length === 0) return;
+    const headers = ['Name', 'First Name', 'Last Name', 'Email', 'Phone', 'Title', 'Company', 'LinkedIn URL', 'Location', 'Source', 'Score', 'Status', 'Created'];
+    const rows = leads.map(l => [
+      l.fullName || '',
+      l.firstName || '',
+      l.lastName || '',
+      l.email || '',
+      l.phone || '',
+      l.title || '',
+      l.company?.name || '',
+      l.linkedinUrl || l.sourceUrl || '',
+      l.location || '',
+      l.source || '',
+      String(l.score || 0),
+      l.status || '',
+      l.createdAt ? new Date(l.createdAt).toLocaleDateString() : '',
+    ]);
+    const csv = [headers, ...rows].map(row => row.map(cell => `"${(cell || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `leads_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadForLinkedInSender = () => {
+    if (leads.length === 0) return;
+    const headers = ['first_name', 'profile_url'];
+    const rows = leads
+      .filter(l => l.linkedinUrl || l.sourceUrl?.includes('linkedin'))
+      .map(l => [
+        l.firstName || l.fullName?.split(' ')[0] || '',
+        l.linkedinUrl || l.sourceUrl || '',
+      ]);
+    if (rows.length === 0) {
+      alert('No leads with LinkedIn URLs found');
+      return;
+    }
+    const csv = [headers, ...rows].map(row => row.map(cell => `"${(cell || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `linkedin_contacts_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Leads</h1>
-        <Link
-          href="/leads/collect"
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          Collect New Leads
-        </Link>
+        <div className="flex gap-2">
+          {leads.length > 0 && (
+            <>
+              <button
+                onClick={downloadCSV}
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              >
+                Download CSV
+              </button>
+              <button
+                onClick={downloadForLinkedInSender}
+                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+              >
+                Export for LinkedIn Sender
+              </button>
+            </>
+          )}
+          <Link
+            href="/leads/collect"
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Collect New Leads
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
