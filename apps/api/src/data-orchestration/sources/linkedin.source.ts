@@ -30,6 +30,8 @@ export class LinkedInDataSource extends DataSource {
     enabled: true,
     requiresAuth: true,
     requiresBrowser: false,
+    supportsProxy: false,
+    supportsConcurrency: true,
     costPerRequest: 0,
     rateLimit: { requests: 10, period: 'minute' as const },
     averageLatency: 2000,
