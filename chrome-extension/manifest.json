@@ -12,7 +12,8 @@
     "storage",
     "tabs",
     "webRequest",
-    "downloads"
+    "downloads",
+    "alarms"
   ],
   "host_permissions": [
     "https://*.facebook.com/*",
@@ -29,8 +30,7 @@
     "https://*.google.com/*"
   ],
   "background": {
-    "service_worker": "background/service-worker.js",
-    "type": "module"
+    "service_worker": "background/service-worker.js"
   },
   "content_scripts": [
     {

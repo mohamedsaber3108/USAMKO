@@ -8,7 +8,7 @@
 // Configuration
 const CONFIG = {
   WEBSOCKET_URL: 'ws://localhost:3000/token-capture',
-  PRODUCTION_URL: 'wss://44.205.4.211/token-capture',
+  PRODUCTION_URL: 'wss://usamko.usamif.com/token-capture',
   RECONNECT_INTERVAL: 5000,
   PING_INTERVAL: 30000,
 };
@@ -89,7 +89,7 @@ function connectWebSocket() {
   }
 
   // Determine URL based on environment
-  const isDevelopment = true; // Change to false for production
+  const isDevelopment = false; // Change to false for production
   const wsUrl = isDevelopment ? CONFIG.WEBSOCKET_URL : CONFIG.PRODUCTION_URL;
   const urlWithToken = `${wsUrl}?token=${jwtToken}`;
 

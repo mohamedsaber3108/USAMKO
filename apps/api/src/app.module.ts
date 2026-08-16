@@ -33,6 +33,7 @@ import { AdminModule } from '../../../src/admin/admin.module';
 import { AIOrchestrationModule } from '../../../src/ai-orchestration/ai-orchestration.module';
 import { DataOrchestrationModule } from './data-orchestration/data-orchestration.module';
 import { ScrapingAccountsModule } from './scraping-accounts/scraping-accounts.module';
+import { TokenCaptureModule } from './token-capture/token-capture.module';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { ScrapingAccountsModule } from './scraping-accounts/scraping-accounts.mo
     AIOrchestrationModule, // AI model routing & cost optimization
     DataOrchestrationModule, // Natural language data collection
     ScrapingAccountsModule, // Secure platform credential management
+    TokenCaptureModule, // Real-time token capture via Chrome extension
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
