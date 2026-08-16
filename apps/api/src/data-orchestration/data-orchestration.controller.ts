@@ -19,6 +19,7 @@ import { User as UserDecorator } from '../common/decorators/user.decorator';
 import { DataOrchestrator } from './orchestrator.service';
 import { DataCollectionRequest, SourceCapability } from './sources/source.interface';
 import { PrismaService } from '../prisma/prisma.service';
+import { AICollectionOrchestratorService } from './ai-collection-orchestrator.service';
 
 // DTOs
 export class CollectDataDto {
@@ -46,6 +47,7 @@ export class DataOrchestrationController {
   constructor(
     private orchestrator: DataOrchestrator,
     private prisma: PrismaService,
+    private aiCollectionOrchestrator: AICollectionOrchestratorService,
   ) {}
 
   /**
@@ -85,6 +87,33 @@ export class DataOrchestrationController {
       count: sources.length,
       sources: sources.map((s) => s.config.name),
     };
+  }
+
+  /**
+   * AI-powered natural language data collection
+   */
+  @Post('collect/ai')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Collect data using natural language query' })
+  @ApiResponse({ status: 200, description: 'Data collection successful' })
+  @ApiResponse({ status: 400, description: 'Invalid request' })
+  async collectWithAI(
+    @TenantDecorator('id') tenantId: string,
+    @UserDecorator('id') userId: string,
+    @Body() body: { query: string; saveAsLeads?: boolean },
+  ) {
+    const result = await this.aiCollectionOrchestrator.collectWithAI({
+      query: body.query,
+      tenantId,
+      userId,
+    });
+
+    // Save as leads if requested
+    if (body.saveAsLeads && result.results.length > 0) {
+      await this.saveAsLeads(result.results, tenantId, userId);
+    }
+
+    return result;
   }
 
   /**

@@ -4,6 +4,7 @@ import { DataOrchestrator } from './orchestrator.service';
 import { DataOrchestrationController } from './data-orchestration.controller';
 import { LinkedInDataSource } from './sources/linkedin.source';
 import { ScraplingDataSource } from './sources/scrapling.source';
+import { AICollectionOrchestratorService } from './ai-collection-orchestrator.service';
 
 // Import existing services
 import { LinkedInModule } from '../linkedin/linkedin.module';
@@ -28,9 +29,10 @@ import { LeadsModule } from '../leads/leads.module';
     DataOrchestrator,
     LinkedInDataSource,
     ScraplingDataSource,
+    AICollectionOrchestratorService,
   ],
   controllers: [DataOrchestrationController],
-  exports: [DataOrchestrator],
+  exports: [DataOrchestrator, AICollectionOrchestratorService],
 })
 export class DataOrchestrationModule implements OnModuleInit {
   constructor(

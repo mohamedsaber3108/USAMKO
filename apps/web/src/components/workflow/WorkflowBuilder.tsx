@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useRef, useCallback } from 'react';
-import ReactFlow, { 
-  ReactFlowProvider, 
-  addEdge, 
-  MiniMap, 
-  Controls, 
+import ReactFlow, {
+  ReactFlowProvider,
+  addEdge,
+  MiniMap,
+  Controls,
   Background,
   useNodesState,
   useEdgesState,
@@ -15,6 +15,7 @@ import ReactFlow, {
   EdgeTypes,
   NodeTypes
 } from 'react-flow-renderer';
+import api from '@/lib/api';
 
 // Node types
 const nodeTypes: NodeTypes = {
@@ -147,13 +148,73 @@ export default function WorkflowBuilder() {
               Clear Canvas
             </button>
             <button
-              onClick={() => alert('Workflow saved!')}
+              onClick={async () => {
+                try {
+                  const workflowName = prompt('Enter workflow name:');
+                  if (!workflowName) return;
+
+                  const workflow = await api.createWorkflow({
+                    name: workflowName,
+                    description: 'Created from workflow builder',
+                    config: {
+                      nodes: nodes.map(n => ({
+                        id: n.id,
+                        type: n.type,
+                        position: n.position,
+                        data: n.data,
+                      })),
+                      edges: edges.map(e => ({
+                        id: e.id,
+                        source: e.source,
+                        target: e.target,
+                      })),
+                    },
+                    status: 'DRAFT',
+                  });
+                  alert(`Workflow "${workflowName}" saved successfully!`);
+                } catch (error: any) {
+                  alert('Failed to save workflow: ' + error.message);
+                }
+              }}
               className="w-full px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
             >
               Save Workflow
             </button>
             <button
-              onClick={() => alert('Workflow executed!')}
+              onClick={async () => {
+                try {
+                  if (nodes.length === 0) {
+                    alert('Add nodes to the workflow first');
+                    return;
+                  }
+
+                  // First save as a temporary workflow
+                  const workflow = await api.createWorkflow({
+                    name: `Temp Workflow ${Date.now()}`,
+                    description: 'Temporary workflow for execution',
+                    config: {
+                      nodes: nodes.map(n => ({
+                        id: n.id,
+                        type: n.type,
+                        position: n.position,
+                        data: n.data,
+                      })),
+                      edges: edges.map(e => ({
+                        id: e.id,
+                        source: e.source,
+                        target: e.target,
+                      })),
+                    },
+                    status: 'ACTIVE',
+                  });
+
+                  // Then execute it
+                  await api.executeWorkflow(workflow.id);
+                  alert('Workflow execution started! Check workflows page for status.');
+                } catch (error: any) {
+                  alert('Failed to execute workflow: ' + error.message);
+                }
+              }}
               className="w-full px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
             >
               Execute Workflow
