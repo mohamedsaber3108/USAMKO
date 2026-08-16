@@ -125,61 +125,46 @@ export class LeadsService {
   }
 
   async collect(tenantId: string, collectDto: CollectLeadsDto) {
-    try {
-      this.logger.log(`Collecting leads from ${collectDto.source} for tenant ${tenantId}`);
+    this.logger.log(`Collecting leads from ${collectDto.source} for tenant ${tenantId}`);
 
-      let rawLeads: any[] = [];
+    let rawLeads: any[] = [];
 
-      switch (collectDto.source) {
-        case LeadSource.LINKEDIN:
-          rawLeads = await this.collectFromLinkedIn(collectDto);
-          break;
+    switch (collectDto.source) {
+      case LeadSource.LINKEDIN:
+        rawLeads = await this.collectFromLinkedIn(collectDto);
+        break;
 
-        case LeadSource.GOOGLE_MAPS:
-          rawLeads = await this.collectFromGoogleMaps(tenantId, collectDto);
-          break;
+      case LeadSource.GOOGLE_MAPS:
+        rawLeads = await this.collectFromGoogleMaps(tenantId, collectDto);
+        break;
 
-        case LeadSource.FACEBOOK:
-        case LeadSource.INSTAGRAM:
-        case LeadSource.TWITTER:
-          throw new Error(`${collectDto.source} collection not yet implemented`);
+      case LeadSource.FACEBOOK:
+      case LeadSource.INSTAGRAM:
+      case LeadSource.TWITTER:
+        throw new Error(`${collectDto.source} collection coming soon. Use LinkedIn or Google Maps for now.`);
 
-        default:
-          throw new Error(`Unknown source: ${collectDto.source}`);
-      }
-
-      // Convert raw leads to Lead records
-      const createdLeads = [];
-      for (const rawLead of rawLeads) {
-        try {
-          const leadData = this.mapRawLeadToDto(rawLead, collectDto.source);
-          const lead = await this.create(tenantId, leadData);
-
-          // Enrich if requested
-          if (collectDto.enrichWithEmail || collectDto.autoScore) {
-            await this.enrichment.enrichLead(lead.id, {
-              findEmail: collectDto.enrichWithEmail,
-              calculateScore: collectDto.autoScore,
-            });
-          }
-
-          createdLeads.push(lead);
-        } catch (error) {
-          this.logger.error(`Failed to create lead: ${error.message}`);
-        }
-      }
-
-      this.logger.log(`Created ${createdLeads.length} leads from ${collectDto.source}`);
-      return {
-        source: collectDto.source,
-        collected: rawLeads.length,
-        created: createdLeads.length,
-        leads: createdLeads,
-      };
-    } catch (error) {
-      this.logger.error(`Failed to collect leads: ${error.message}`, error.stack);
-      throw error;
+      default:
+        throw new Error(`Unknown source: ${collectDto.source}`);
     }
+
+    const createdLeads = [];
+    for (const rawLead of rawLeads) {
+      try {
+        const leadData = this.mapRawLeadToDto(rawLead, collectDto.source);
+        const lead = await this.create(tenantId, leadData);
+        createdLeads.push(lead);
+      } catch (error) {
+        this.logger.error(`Failed to create lead: ${error.message}`);
+      }
+    }
+
+    this.logger.log(`Created ${createdLeads.length} leads from ${collectDto.source}`);
+    return {
+      source: collectDto.source,
+      collected: rawLeads.length,
+      created: createdLeads.length,
+      leads: createdLeads,
+    };
   }
 
   private async collectFromLinkedIn(params: CollectLeadsDto): Promise<any[]> {

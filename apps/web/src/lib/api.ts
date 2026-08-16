@@ -262,11 +262,11 @@ class ApiClient {
   async deleteLead(id: string) {
     return this.request(`/leads/${id}`, { method: 'DELETE' });
   }
-  async collectLeads(data: { source: string; query: string; location?: string; limit?: number }) {
+  async collectLeads(data: { source: string; industry?: string; location?: string; company?: string; role?: string; maxResults?: number; enrichWithEmail?: boolean; autoScore?: boolean; searchQuery?: string }) {
     return this.request('/leads/collect', { method: 'POST', body: JSON.stringify(data) });
   }
   async collectMapsLeads(data: { searchQuery: string; location: string; maxResults: number }) {
-    return this.request('/leads/collect/maps', { method: 'POST', body: JSON.stringify(data) });
+    return this.request('/leads/collect', { method: 'POST', body: JSON.stringify({ source: 'google_maps', ...data }) });
   }
   async enrichLeads(leadIds: string[]) {
     return this.request('/leads/enrich', { method: 'POST', body: JSON.stringify({ leadIds }) });
