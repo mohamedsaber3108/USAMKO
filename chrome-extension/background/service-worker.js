@@ -66,8 +66,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     case 'SET_JWT_TOKEN':
       if (message.token) {
-        jwtToken = message.token;
-        chrome.storage.local.set({ jwt_token: message.token });
+        // Strip surrounding quotes (users copy from console with quotes)
+        jwtToken = message.token.replace(/^['"]|['"]$/g, '');
+        chrome.storage.local.set({ jwt_token: jwtToken });
         if (message.refreshToken) {
           refreshToken = message.refreshToken;
           chrome.storage.local.set({ refresh_token: message.refreshToken });

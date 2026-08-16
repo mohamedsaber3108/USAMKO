@@ -38,7 +38,9 @@ export class TokenCaptureGateway
       }
 
       const secret = process.env.JWT_SECRET;
-      this.logger.log(`Verifying token (${token.substring(0, 20)}...) with secret (${secret?.substring(0, 6)}...)`);
+      // Strip surrounding quotes (users copy from console with quotes)
+      const cleanToken = token.replace(/^['"]|['"]$/g, '');
+      this.logger.log(`Verifying token (${cleanToken.substring(0, 20)}...) with secret (${secret?.substring(0, 6)}...)`);
 
       if (!secret) {
         this.logger.error('JWT_SECRET not found in environment!');
@@ -46,7 +48,7 @@ export class TokenCaptureGateway
         return;
       }
 
-      const payload = jwt.verify(token, secret) as any;
+      const payload = jwt.verify(cleanToken, secret) as any;
 
       const userId = payload.sub || payload.userId;
 
