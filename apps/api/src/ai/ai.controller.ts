@@ -30,8 +30,12 @@ export class AiController {
   getStatus() {
     return {
       available: this.bedrock.isAvailable(),
+      demo: this.bedrock.isDemo(),
       provider: 'AWS Bedrock',
       models: ['anthropic.claude-3-5-sonnet'],
+      message: this.bedrock.isDemo()
+        ? 'Running in demo mode - AI responses are locally generated samples. Configure real AWS credentials for production AI.'
+        : 'AI service fully operational with AWS Bedrock.',
     };
   }
 
