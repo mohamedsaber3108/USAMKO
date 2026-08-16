@@ -7,6 +7,9 @@ module.exports = function (options) {
         const externals = [
           'bcrypt',
           'argon2',
+          'canvas',
+          'chartjs-node-canvas',
+          'chart.js',
           'playwright',
           'playwright-core',
           'puppeteer',
