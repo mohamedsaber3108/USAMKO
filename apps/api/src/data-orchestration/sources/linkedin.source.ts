@@ -31,7 +31,7 @@ export class LinkedInDataSource extends DataSource {
     requiresAuth: true,
     requiresBrowser: false,
     costPerRequest: 0,
-    rateLimit: { requests: 10, per: 'minute' as const },
+    rateLimit: { requests: 10, period: 'minute' as const },
     averageLatency: 2000,
   };
 
@@ -40,10 +40,10 @@ export class LinkedInDataSource extends DataSource {
   }
 
   canHandle(request: DataCollectionRequest): boolean {
-    // Can handle if platform is linkedin or entityType is person
+    // Can handle if entityType is person or query mentions linkedin
     return (
-      request.platform === 'linkedin' ||
-      request.entityType === 'person'
+      request.entityType === 'person' ||
+      request.query.toLowerCase().includes('linkedin')
     );
   }
 

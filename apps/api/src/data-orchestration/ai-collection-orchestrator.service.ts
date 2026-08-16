@@ -233,15 +233,16 @@ Provide a brief 2-3 sentence summary highlighting key findings and data quality.
       const collectionRequest = {
         tenantId: request.tenantId,
         userId: request.userId,
-        platform: parsed.platform,
         query: parsed.searchQuery,
         entityType: 'person' as const, // Required field
-        dataType: parsed.intent,
         maxResults: parsed.limit || 10,
         location: parsed.filters.location,
-        filters: parsed.filters,
-        priority: 'normal' as const,
-        qualityThreshold: 70,
+        filters: {
+          ...parsed.filters,
+          platform: parsed.platform, // Store in filters instead
+          intent: parsed.intent,
+        },
+        autoScore: true,
         deduplication: true,
       };
 
