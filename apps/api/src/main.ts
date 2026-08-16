@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
+import { WsAdapter } from '@nestjs/platform-ws';
 import { AppModule } from './app.module';
 import * as helmetModule from 'helmet';
 import { AuditInterceptor } from './audit/audit.interceptor';
@@ -40,6 +41,9 @@ async function bootstrap() {
   const auditService = app.get(AuditService);
   app.useGlobalInterceptors(new AuditInterceptor(auditService));
   Logger.log('✅ Audit logging enabled');
+
+  // Enable raw WebSocket support for token-capture gateway
+  app.useWebSocketAdapter(new WsAdapter(app));
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
