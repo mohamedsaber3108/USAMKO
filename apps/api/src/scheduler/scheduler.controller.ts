@@ -13,6 +13,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../common/decorators/roles.decorator';
+import { Tenant as TenantDecorator } from '../common/decorators/tenant.decorator';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('schedules')
@@ -33,8 +34,10 @@ export class SchedulerController {
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.USER)
-  createSchedule(@Body() dto: { workflowId: string; cronExpression: string; enabled?: boolean }) {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
+  createSchedule(
+    @TenantDecorator('id') tenantId: string,
+    @Body() dto: { workflowId: string; cronExpression: string; enabled?: boolean },
+  ) {
     return this.schedulerService['createSchedule'](tenantId, dto.workflowId, dto.cronExpression);
   }
 

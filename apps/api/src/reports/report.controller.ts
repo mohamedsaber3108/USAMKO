@@ -20,6 +20,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../common/decorators/roles.decorator';
+import { Tenant as TenantDecorator } from '../common/decorators/tenant.decorator';
+import { User as UserDecorator } from '../common/decorators/user.decorator';
 type Response = any;
 
 // DTOs
@@ -66,10 +68,10 @@ export class ReportController {
   @ApiResponse({ status: 200, description: 'Campaign report generated successfully' })
   @ApiResponse({ status: 404, description: 'Campaign not found' })
   async generateCampaignReport(
+    @TenantDecorator('id') tenantId: string,
     @Param('id') campaignId: string,
     @Body() dto?: GenerateCampaignReportDto,
   ) {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
     const dateRange = dto
       ? {
           startDate: dto.startDate ? new Date(dto.startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -89,10 +91,10 @@ export class ReportController {
   @ApiResponse({ status: 200, description: 'Platform report generated successfully' })
   @ApiResponse({ status: 404, description: 'Platform not found' })
   async generatePlatformReport(
+    @TenantDecorator('id') tenantId: string,
     @Param('platform') platform: string,
     @Body() dto?: GeneratePlatformReportDto,
   ) {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
     const dateRange = dto
       ? {
           startDate: dto.startDate ? new Date(dto.startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -111,9 +113,9 @@ export class ReportController {
   @ApiOperation({ summary: 'Generate engagement report' })
   @ApiResponse({ status: 200, description: 'Engagement report generated successfully' })
   async generateEngagementReport(
+    @TenantDecorator('id') tenantId: string,
     @Body() dto?: GenerateEngagementReportDto,
   ) {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
     const dateRange = dto
       ? {
           startDate: dto.startDate ? new Date(dto.startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -135,11 +137,11 @@ export class ReportController {
   @ApiResponse({ status: 200, description: 'Report downloaded successfully' })
   @ApiResponse({ status: 404, description: 'Report not found' })
   async downloadReport(
+    @TenantDecorator('id') tenantId: string,
     @Param('id') id: string,
     @Query('format') format?: 'pdf' | 'excel' | 'csv',
     @Res() response?: Response,
   ) {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
     const report = await this.reportService.getReport(tenantId, id);
 
     if (!report) {
@@ -181,9 +183,11 @@ export class ReportController {
   @Roles(UserRole.ADMIN, UserRole.USER)
   @ApiOperation({ summary: 'Schedule automated report' })
   @ApiResponse({ status: 201, description: 'Report scheduled successfully' })
-  async scheduleReport(@Body() dto: ScheduleReportDto) {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
-    const userId = 'default_user_id'; // In production, get from auth context
+  async scheduleReport(
+    @TenantDecorator('id') tenantId: string,
+    @UserDecorator('id') userId: string,
+    @Body() dto: ScheduleReportDto,
+  ) {
     return this.reportService.scheduleReport(tenantId, userId, {
       ...dto,
       enabled: dto.enabled ?? true,
@@ -197,8 +201,7 @@ export class ReportController {
   @Roles(UserRole.ADMIN, UserRole.USER)
   @ApiOperation({ summary: 'Get all scheduled reports' })
   @ApiResponse({ status: 200, type: [Object] })
-  async getScheduledReports() {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
+  async getScheduledReports(@TenantDecorator('id') tenantId: string) {
     return this.reportService.getScheduledReports(tenantId);
   }
 
@@ -210,8 +213,10 @@ export class ReportController {
   @ApiOperation({ summary: 'Get scheduled report by ID' })
   @ApiResponse({ status: 200, type: Object })
   @ApiResponse({ status: 404, description: 'Schedule not found' })
-  async getScheduledReport(@Param('id') id: string) {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
+  async getScheduledReport(
+    @TenantDecorator('id') tenantId: string,
+    @Param('id') id: string,
+  ) {
     return this.reportService.getScheduledReport(tenantId, id);
   }
 
@@ -224,10 +229,10 @@ export class ReportController {
   @ApiResponse({ status: 200, type: Object })
   @ApiResponse({ status: 404, description: 'Schedule not found' })
   async updateScheduledReport(
+    @TenantDecorator('id') tenantId: string,
     @Param('id') id: string,
     @Body() dto: Partial<ScheduleReportDto>,
   ) {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
     return this.reportService.updateScheduledReport(tenantId, id, dto);
   }
 
@@ -238,8 +243,10 @@ export class ReportController {
   @Roles(UserRole.ADMIN, UserRole.USER)
   @ApiOperation({ summary: 'Delete scheduled report' })
   @ApiResponse({ status: 200, description: 'Schedule deleted successfully' })
-  async deleteScheduledReport(@Param('id') id: string) {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
+  async deleteScheduledReport(
+    @TenantDecorator('id') tenantId: string,
+    @Param('id') id: string,
+  ) {
     return this.reportService.deleteScheduledReport(tenantId, id);
   }
 
@@ -250,8 +257,11 @@ export class ReportController {
   @Roles(UserRole.ADMIN, UserRole.USER)
   @ApiOperation({ summary: 'Toggle scheduled report' })
   @ApiResponse({ status: 200, type: Object })
-  async toggleScheduledReport(@Param('id') id: string, @Body('enabled') enabled: boolean) {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
+  async toggleScheduledReport(
+    @TenantDecorator('id') tenantId: string,
+    @Param('id') id: string,
+    @Body('enabled') enabled: boolean,
+  ) {
     return this.reportService.toggleScheduledReport(tenantId, id, enabled);
   }
 
@@ -262,8 +272,7 @@ export class ReportController {
   @Roles(UserRole.ADMIN, UserRole.USER)
   @ApiOperation({ summary: 'Get all generated reports' })
   @ApiResponse({ status: 200, type: [Object] })
-  async getGeneratedReports() {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
+  async getGeneratedReports(@TenantDecorator('id') tenantId: string) {
     return this.reportService.getGeneratedReports(tenantId);
   }
 
@@ -275,8 +284,10 @@ export class ReportController {
   @ApiOperation({ summary: 'Get report by ID' })
   @ApiResponse({ status: 200, type: Object })
   @ApiResponse({ status: 404, description: 'Report not found' })
-  async getReport(@Param('id') id: string) {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
+  async getReport(
+    @TenantDecorator('id') tenantId: string,
+    @Param('id') id: string,
+  ) {
     return this.reportService.getReport(tenantId, id);
   }
 
@@ -287,8 +298,10 @@ export class ReportController {
   @Roles(UserRole.ADMIN, UserRole.USER)
   @ApiOperation({ summary: 'Delete generated report' })
   @ApiResponse({ status: 200, description: 'Report deleted successfully' })
-  async deleteReport(@Param('id') id: string) {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
+  async deleteReport(
+    @TenantDecorator('id') tenantId: string,
+    @Param('id') id: string,
+  ) {
     return this.reportService.deleteReport(tenantId, id);
   }
 }

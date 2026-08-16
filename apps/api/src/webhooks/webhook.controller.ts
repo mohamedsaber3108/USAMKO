@@ -15,6 +15,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../common/decorators/roles.decorator';
+import { Tenant as TenantDecorator } from '../common/decorators/tenant.decorator';
 
 // DTOs
 export class CreateWebhookDto {
@@ -45,8 +46,10 @@ export class WebhookController {
   @ApiOperation({ summary: 'Create a new webhook subscription' })
   @ApiResponse({ status: 201, description: 'Webhook created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid URL or events' })
-  async createWebhook(@Body() dto: CreateWebhookDto) {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
+  async createWebhook(
+    @TenantDecorator('id') tenantId: string,
+    @Body() dto: CreateWebhookDto,
+  ) {
     return this.webhookService.createWebhook(tenantId, dto.url, dto.events, dto.secret, dto.metadata);
   }
 
@@ -57,8 +60,7 @@ export class WebhookController {
   @Roles(UserRole.ADMIN, UserRole.USER)
   @ApiOperation({ summary: 'Get all webhook subscriptions' })
   @ApiResponse({ status: 200, type: [Object] })
-  async getWebhooks() {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
+  async getWebhooks(@TenantDecorator('id') tenantId: string) {
     return this.webhookService.getWebhooks(tenantId);
   }
 
@@ -70,8 +72,10 @@ export class WebhookController {
   @ApiOperation({ summary: 'Get webhook subscription by ID' })
   @ApiResponse({ status: 200, type: Object })
   @ApiResponse({ status: 404, description: 'Webhook not found' })
-  async getWebhook(@Param('id') id: string) {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
+  async getWebhook(
+    @TenantDecorator('id') tenantId: string,
+    @Param('id') id: string,
+  ) {
     return this.webhookService.getWebhook(tenantId, id);
   }
 
@@ -84,10 +88,10 @@ export class WebhookController {
   @ApiResponse({ status: 200, type: Object })
   @ApiResponse({ status: 404, description: 'Webhook not found' })
   async updateWebhook(
+    @TenantDecorator('id') tenantId: string,
     @Param('id') id: string,
     @Body() dto: UpdateWebhookDto,
   ) {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
     return this.webhookService.updateWebhook(tenantId, id, dto);
   }
 
@@ -98,8 +102,10 @@ export class WebhookController {
   @Roles(UserRole.ADMIN, UserRole.USER)
   @ApiOperation({ summary: 'Delete webhook subscription' })
   @ApiResponse({ status: 200, description: 'Webhook deleted successfully' })
-  async deleteWebhook(@Param('id') id: string) {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
+  async deleteWebhook(
+    @TenantDecorator('id') tenantId: string,
+    @Param('id') id: string,
+  ) {
     return this.webhookService.deleteWebhook(tenantId, id);
   }
 
@@ -111,8 +117,11 @@ export class WebhookController {
   @ApiOperation({ summary: 'Test webhook endpoint' })
   @ApiResponse({ status: 200, description: 'Webhook test completed' })
   @ApiResponse({ status: 400, description: 'Webhook test failed' })
-  async testWebhook(@Param('id') id: string, @Body() dto?: { payload?: any }) {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
+  async testWebhook(
+    @TenantDecorator('id') tenantId: string,
+    @Param('id') id: string,
+    @Body() dto?: { payload?: any },
+  ) {
     return this.webhookService.testWebhook(tenantId, id, dto?.payload);
   }
 
@@ -124,7 +133,6 @@ export class WebhookController {
   @ApiOperation({ summary: 'Get webhook logs' })
   @ApiResponse({ status: 200, type: [Object] })
   async getWebhookLogs(@Param('id') id: string) {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
     return this.webhookService.getWebhookLogs(id);
   }
 
@@ -135,8 +143,7 @@ export class WebhookController {
   @Roles(UserRole.ADMIN, UserRole.USER)
   @ApiOperation({ summary: 'Get webhook statistics' })
   @ApiResponse({ status: 200, type: Object })
-  async getWebhookStats() {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
+  async getWebhookStats(@TenantDecorator('id') tenantId: string) {
     return this.webhookService.getWebhookStats(tenantId);
   }
 
@@ -147,8 +154,10 @@ export class WebhookController {
   @Roles(UserRole.ADMIN, UserRole.USER)
   @ApiOperation({ summary: 'Trigger a webhook manually' })
   @ApiResponse({ status: 200, description: 'Webhook triggered' })
-  async triggerWebhook(@Body() dto: { event: string; data?: any }) {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
+  async triggerWebhook(
+    @TenantDecorator('id') tenantId: string,
+    @Body() dto: { event: string; data?: any },
+  ) {
     // In production, validate event type against WebhookEvent
     return this.webhookService.triggerWebhook(dto.event as any, dto.data || {}, tenantId);
   }

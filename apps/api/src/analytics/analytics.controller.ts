@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/
 import { AnalyticsService } from './analytics.service';
 import { OverviewStats, PlatformStat, CampaignStat, EngagementStat, GrowthStat, TopPost, ContentPerformance } from './analytics.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Tenant as TenantDecorator } from '../common/decorators/tenant.decorator';
 
 @ApiTags('Analytics')
 @UseGuards(JwtAuthGuard)
@@ -19,10 +20,10 @@ export class AnalyticsController {
   @ApiQuery({ name: 'startDate', required: false, type: String })
   @ApiQuery({ name: 'endDate', required: false, type: String })
   async getOverview(
+    @TenantDecorator('id') tenantId: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ): Promise<OverviewStats> {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
     return this.analyticsService.getOverviewStats(tenantId, {
       startDate: startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
       endDate: endDate ? new Date(endDate) : new Date(),
@@ -37,9 +38,9 @@ export class AnalyticsController {
   @ApiParam({ name: 'platform', required: false, type: String })
   @ApiResponse({ status: 200, description: 'Platform statistics' })
   async getPlatformStats(
+    @TenantDecorator('id') tenantId: string,
     @Param('platform') platform?: string,
   ): Promise<PlatformStat[]> {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
     return this.analyticsService.getPlatformStats(tenantId, platform);
   }
 
@@ -51,9 +52,9 @@ export class AnalyticsController {
   @ApiParam({ name: 'id', type: String })
   @ApiResponse({ status: 200, description: 'Campaign statistics' })
   async getCampaignStats(
+    @TenantDecorator('id') tenantId: string,
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<CampaignStat> {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
     return this.analyticsService.getCampaignStats(tenantId, id);
   }
 
@@ -66,10 +67,10 @@ export class AnalyticsController {
   @ApiQuery({ name: 'startDate', required: false, type: String })
   @ApiQuery({ name: 'endDate', required: false, type: String })
   async getEngagement(
+    @TenantDecorator('id') tenantId: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ): Promise<EngagementStat> {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
     return this.analyticsService.getEngagementStats(tenantId, {
       startDate: startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
       endDate: endDate ? new Date(endDate) : new Date(),
@@ -85,10 +86,10 @@ export class AnalyticsController {
   @ApiQuery({ name: 'startDate', required: false, type: String })
   @ApiQuery({ name: 'endDate', required: false, type: String })
   async getGrowth(
+    @TenantDecorator('id') tenantId: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ): Promise<GrowthStat> {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
     return this.analyticsService.getGrowthStats(tenantId, {
       startDate: startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
       endDate: endDate ? new Date(endDate) : new Date(),
@@ -105,11 +106,11 @@ export class AnalyticsController {
   @ApiQuery({ name: 'startDate', required: false, type: String })
   @ApiQuery({ name: 'endDate', required: false, type: String })
   async getTopPosts(
+    @TenantDecorator('id') tenantId: string,
     @Query('limit') limit: number = 10,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ): Promise<TopPost[]> {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
     return this.analyticsService.getTopPosts(tenantId, limit, {
       startDate: startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
       endDate: endDate ? new Date(endDate) : new Date(),
@@ -122,8 +123,9 @@ export class AnalyticsController {
   @Get('content-performance')
   @ApiOperation({ summary: 'Get content performance analysis' })
   @ApiResponse({ status: 200, description: 'Content performance' })
-  async getContentPerformance(): Promise<ContentPerformance[]> {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
+  async getContentPerformance(
+    @TenantDecorator('id') tenantId: string,
+  ): Promise<ContentPerformance[]> {
     return this.analyticsService.getContentPerformance(tenantId);
   }
 
@@ -140,11 +142,11 @@ export class AnalyticsController {
   @ApiQuery({ name: 'startDate', required: false, type: String })
   @ApiQuery({ name: 'endDate', required: false, type: String })
   async exportAnalytics(
+    @TenantDecorator('id') tenantId: string,
     @Query('format') format: 'csv' | 'json' = 'csv',
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ): Promise<string | object> {
-    const tenantId = 'default_tenant_id'; // In production, get from auth context
     return this.analyticsService.exportAnalytics(tenantId, format);
   }
 }
