@@ -28,7 +28,6 @@ import { Roles, UserRole } from '../common/decorators/roles.decorator';
 import { Permissions, Permission } from '../common/decorators/permissions.decorator';
 
 @Controller('auth')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
@@ -58,8 +57,8 @@ export class AuthController {
     return this.authService.refreshTokens(user);
   }
 
-  // Admin-only endpoints
   @Get('users')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Permissions(Permission.READ)
   async getAllUsers(@Auth() user: any) {
@@ -67,6 +66,7 @@ export class AuthController {
   }
 
   @Patch('users/:userId/role')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Permissions(Permission.UPDATE)
   async updateUserRole(
@@ -77,16 +77,16 @@ export class AuthController {
     return this.authService.updateUserRole(userId, role);
   }
 
-  // Viewer endpoints - read-only access
   @Get('profile')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.VIEWER, UserRole.USER, UserRole.ADMIN)
   @Permissions(Permission.READ)
   async getProfile(@Auth() user: any) {
     return this.authService.getProfile(user);
   }
 
-  // Email verification endpoints
   @Post('verify-email/request')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async requestEmailVerification(@Auth() user: any) {
     return this.authService.requestEmailVerification(user.id);
@@ -98,7 +98,6 @@ export class AuthController {
     return this.authService.verifyEmail(dto);
   }
 
-  // Password reset endpoints
   @Post('password-reset/request')
   @HttpCode(HttpStatus.OK)
   async requestPasswordReset(@Body('email') email: string) {
@@ -111,34 +110,26 @@ export class AuthController {
     return this.authService.resetPassword(dto);
   }
 
-  // Google OAuth routes
   @Get('google')
   @UseGuards(AuthGuard('google'))
-  async googleAuth(@Req() req) {
-    // Guard redirects to Google
-  }
+  async googleAuth(@Req() req) {}
 
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleAuthCallback(@Auth() user: any, @Res() res: Response) {
     const tokens = await this.authService.login(user);
-    // Redirect to frontend with tokens
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
     res.redirect(`${frontendUrl}/auth/callback?token=${tokens.accessToken}&refreshToken=${tokens.refreshToken}`);
   }
 
-  // GitHub OAuth routes
   @Get('github')
   @UseGuards(AuthGuard('github'))
-  async githubAuth(@Req() req) {
-    // Guard redirects to GitHub
-  }
+  async githubAuth(@Req() req) {}
 
   @Get('github/callback')
   @UseGuards(AuthGuard('github'))
   async githubAuthCallback(@Auth() user: any, @Res() res: Response) {
     const tokens = await this.authService.login(user);
-    // Redirect to frontend with tokens
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
     res.redirect(`${frontendUrl}/auth/callback?token=${tokens.accessToken}&refreshToken=${tokens.refreshToken}`);
   }
