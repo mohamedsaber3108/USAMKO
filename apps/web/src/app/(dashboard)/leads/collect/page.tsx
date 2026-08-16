@@ -22,35 +22,22 @@ export default function CollectLeadsPage() {
   const handleCollect = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('accessToken');
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
-      const res = await fetch(`${API_URL}/leads/collect`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          source: formData.source,
-          industry: formData.industry,
-          location: formData.location,
-          company: formData.company,
-          role: formData.role,
-          maxResults: formData.maxResults,
-          enrichWithEmail: formData.enrichWithEmail,
-          autoScore: formData.autoScore,
-        }),
+      const data = await api.collectLeads({
+        source: formData.source,
+        industry: formData.industry || undefined,
+        location: formData.location || undefined,
+        company: formData.company || undefined,
+        role: formData.role || undefined,
+        maxResults: formData.maxResults,
+        enrichWithEmail: formData.enrichWithEmail,
+        autoScore: formData.autoScore,
+        searchQuery: formData.source === 'google_maps' ? formData.industry : undefined,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        alert(data.message || 'Failed to collect leads');
-        return;
-      }
       alert(`Successfully collected ${data.created || 0} leads!`);
       router.push('/leads');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Collection error:', error);
-      alert('An error occurred');
+      alert(error.message || 'An error occurred');
     } finally {
       setLoading(false);
     }
