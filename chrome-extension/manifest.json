@@ -13,7 +13,8 @@
     "tabs",
     "webRequest",
     "downloads",
-    "alarms"
+    "alarms",
+    "notifications"
   ],
   "host_permissions": [
     "https://*.facebook.com/*",
@@ -46,7 +47,7 @@
     {
       "matches": ["https://*.linkedin.com/*"],
       "js": ["content/linkedin.js"],
-      "run_at": "document_start"
+      "run_at": "document_idle"
     },
     {
       "matches": ["https://*.twitter.com/*", "https://*.x.com/*"],

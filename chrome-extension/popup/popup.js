@@ -80,8 +80,9 @@ function setupEventListeners() {
   clearLogsBtn.addEventListener('click', handleClearLogs);
   exportCsvBtn.addEventListener('click', handleExportCsv);
 
-  // Update Google Maps stats periodically
-  setInterval(updateGoogleMapsStats, 1000);
+  // Update Google Maps stats periodically (every 10s to avoid spam)
+  updateGoogleMapsStats();
+  setInterval(updateGoogleMapsStats, 10000);
 }
 
 /**

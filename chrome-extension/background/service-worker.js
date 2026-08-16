@@ -1,14 +1,12 @@
 /**
  * USAMKO Token Capture - Background Service Worker
- *
- * Manages WebSocket connection to USAMKO backend and handles token capture.
- * This is a Manifest V3 service worker that stays alive as long as needed.
  */
 
 // Configuration
 const CONFIG = {
   WEBSOCKET_URL: 'ws://localhost:3000/token-capture',
   PRODUCTION_URL: 'wss://usamko.usamif.com/token-capture',
+  API_URL: 'https://usamko.usamif.com',
   RECONNECT_INTERVAL: 5000,
   PING_INTERVAL: 30000,
 };
@@ -18,28 +16,47 @@ let websocket = null;
 let reconnectTimer = null;
 let pingTimer = null;
 let jwtToken = null;
+let refreshToken = null;
 let isConnected = false;
+let googleMapsLeads = [];
 
 /**
  * Initialize on extension install or update
  */
 chrome.runtime.onInstalled.addListener(() => {
   console.log('USAMKO Token Capture installed');
+  loadTokensFromStorage();
+});
 
-  // Load saved JWT token
-  chrome.storage.local.get(['jwt_token'], (result) => {
+/**
+ * Also load tokens on service worker startup (wake from idle)
+ */
+chrome.storage.local.get(['jwt_token', 'refresh_token'], (result) => {
+  if (result.jwt_token) {
+    jwtToken = result.jwt_token;
+    refreshToken = result.refresh_token || null;
+    connectWebSocket();
+  }
+});
+
+/**
+ * Load tokens from storage
+ */
+function loadTokensFromStorage() {
+  chrome.storage.local.get(['jwt_token', 'refresh_token'], (result) => {
     if (result.jwt_token) {
       jwtToken = result.jwt_token;
+      refreshToken = result.refresh_token || null;
       connectWebSocket();
     }
   });
-});
+}
 
 /**
  * Handle messages from content scripts and popup
  */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('Background received message:', message);
+  console.log('Background received message:', message.type);
 
   switch (message.type) {
     case 'TOKEN_CAPTURED':
@@ -48,9 +65,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       break;
 
     case 'SET_JWT_TOKEN':
-      jwtToken = message.token;
-      chrome.storage.local.set({ jwt_token: message.token });
-      connectWebSocket();
+      if (message.token) {
+        jwtToken = message.token;
+        chrome.storage.local.set({ jwt_token: message.token });
+        if (message.refreshToken) {
+          refreshToken = message.refreshToken;
+          chrome.storage.local.set({ refresh_token: message.refreshToken });
+        }
+        connectWebSocket();
+      }
       sendResponse({ success: true });
       break;
 
@@ -66,11 +89,34 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ success: true });
       break;
 
+    case 'GET_GOOGLE_MAPS_LEADS':
+      sendResponse({ leads: googleMapsLeads });
+      break;
+
+    case 'ADD_GOOGLE_MAPS_LEAD':
+      if (message.lead) {
+        googleMapsLeads.push(message.lead);
+        chrome.storage.local.set({ google_maps_leads: googleMapsLeads });
+      }
+      sendResponse({ success: true, count: googleMapsLeads.length });
+      break;
+
+    case 'EXPORT_GOOGLE_MAPS_CSV':
+      exportLeadsToCsv();
+      sendResponse({ success: true, count: googleMapsLeads.length });
+      break;
+
+    case 'CLEAR_GOOGLE_MAPS_LEADS':
+      googleMapsLeads = [];
+      chrome.storage.local.set({ google_maps_leads: [] });
+      sendResponse({ success: true });
+      break;
+
     default:
       sendResponse({ error: 'Unknown message type' });
   }
 
-  return true; // Keep channel open for async response
+  return true;
 });
 
 /**
@@ -79,17 +125,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 function connectWebSocket() {
   if (!jwtToken) {
     console.error('Cannot connect: JWT token not set');
-    notifyPopup('error', 'JWT token not configured');
     return;
   }
 
-  // Disconnect existing connection
   if (websocket) {
     websocket.close();
   }
 
-  // Determine URL based on environment
-  const isDevelopment = false; // Change to false for production
+  const isDevelopment = false;
   const wsUrl = isDevelopment ? CONFIG.WEBSOCKET_URL : CONFIG.PRODUCTION_URL;
   const urlWithToken = `${wsUrl}?token=${jwtToken}`;
 
@@ -102,50 +145,39 @@ function connectWebSocket() {
       console.log('WebSocket connected');
       isConnected = true;
       clearTimeout(reconnectTimer);
-
-      // Start ping timer
       startPingTimer();
-
-      // Notify popup
       notifyPopup('connected', 'Connected to USAMKO');
-
-      // Update badge
       chrome.action.setBadgeText({ text: '✓' });
       chrome.action.setBadgeBackgroundColor({ color: '#4CAF50' });
     };
 
     websocket.onmessage = (event) => {
-      console.log('WebSocket message received:', event.data);
-
       try {
         const message = JSON.parse(event.data);
         handleWebSocketMessage(message);
       } catch (error) {
-        console.error('Failed to parse WebSocket message:', error);
+        console.error('Failed to parse message:', error);
       }
     };
 
     websocket.onerror = (error) => {
       console.error('WebSocket error:', error);
-      notifyPopup('error', 'WebSocket connection error');
     };
 
-    websocket.onclose = () => {
-      console.log('WebSocket disconnected');
+    websocket.onclose = (event) => {
+      console.log('WebSocket disconnected:', event.code, event.reason);
       isConnected = false;
       stopPingTimer();
+      chrome.action.setBadgeText({ text: '' });
+      notifyPopup('disconnected', 'Disconnected');
 
-      // Update badge
-      chrome.action.setBadgeText({ text: '✗' });
-      chrome.action.setBadgeBackgroundColor({ color: '#F44336' });
-
-      // Notify popup
-      notifyPopup('disconnected', 'Disconnected from USAMKO');
-
-      // Auto-reconnect
-      scheduleReconnect();
+      // If closed due to auth failure, try refresh
+      if (event.code === 1008 && refreshToken) {
+        refreshAccessToken();
+      } else {
+        scheduleReconnect();
+      }
     };
-
   } catch (error) {
     console.error('Failed to create WebSocket:', error);
     scheduleReconnect();
@@ -166,35 +198,68 @@ function disconnectWebSocket() {
 }
 
 /**
- * Schedule reconnection attempt
+ * Schedule reconnection
  */
 function scheduleReconnect() {
-  if (reconnectTimer) {
-    clearTimeout(reconnectTimer);
-  }
-
+  if (reconnectTimer) clearTimeout(reconnectTimer);
   reconnectTimer = setTimeout(() => {
-    console.log('Attempting to reconnect...');
-    connectWebSocket();
+    if (jwtToken) {
+      console.log('Attempting to reconnect...');
+      connectWebSocket();
+    }
   }, CONFIG.RECONNECT_INTERVAL);
 }
 
 /**
- * Start ping timer to keep connection alive
+ * Refresh JWT token
+ */
+async function refreshAccessToken() {
+  if (!refreshToken) return;
+
+  try {
+    const response = await fetch(`${CONFIG.API_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      jwtToken = data.accessToken;
+      if (data.refreshToken) refreshToken = data.refreshToken;
+
+      chrome.storage.local.set({
+        jwt_token: jwtToken,
+        refresh_token: refreshToken,
+      });
+
+      console.log('Token refreshed successfully');
+      connectWebSocket();
+    } else {
+      console.error('Token refresh failed:', response.status);
+      jwtToken = null;
+      refreshToken = null;
+      chrome.storage.local.remove(['jwt_token', 'refresh_token']);
+      notifyPopup('error', 'Session expired. Please re-enter token.');
+    }
+  } catch (error) {
+    console.error('Token refresh error:', error);
+    scheduleReconnect();
+  }
+}
+
+/**
+ * Ping timer to keep connection alive
  */
 function startPingTimer() {
   stopPingTimer();
-
   pingTimer = setInterval(() => {
     if (websocket && websocket.readyState === WebSocket.OPEN) {
-      sendWebSocketMessage('ping', {});
+      websocket.send(JSON.stringify({ event: 'ping', data: {} }));
     }
   }, CONFIG.PING_INTERVAL);
 }
 
-/**
- * Stop ping timer
- */
 function stopPingTimer() {
   if (pingTimer) {
     clearInterval(pingTimer);
@@ -203,60 +268,30 @@ function stopPingTimer() {
 }
 
 /**
- * Send message to WebSocket server
- */
-function sendWebSocketMessage(event, data) {
-  if (!websocket || websocket.readyState !== WebSocket.OPEN) {
-    console.error('WebSocket not connected');
-    return false;
-  }
-
-  const message = JSON.stringify({ event, data });
-  websocket.send(message);
-  return true;
-}
-
-/**
  * Handle WebSocket messages from server
  */
 function handleWebSocketMessage(message) {
-  console.log('Handling WebSocket message:', message);
-
   switch (message.event) {
     case 'connection_status':
-      console.log('Connection status:', message.data);
       notifyPopup('status', message.data);
       break;
-
     case 'token_saved':
-      console.log('Token saved successfully:', message.data);
       notifyPopup('success', `Token saved for ${message.data.platform}`);
-
-      // Show notification
       chrome.notifications.create({
         type: 'basic',
         iconUrl: 'icons/icon48.png',
         title: 'Token Captured',
-        message: `${message.data.platform} account connected successfully`,
+        message: `${message.data.platform} account connected`,
       });
       break;
-
     case 'token_error':
-      console.error('Token save error:', message.data);
-      notifyPopup('error', `Failed to save token: ${message.data.error}`);
+      notifyPopup('error', `Failed: ${message.data.error}`);
       break;
-
     case 'connection_stats':
-      console.log('Connection stats:', message.data);
       notifyPopup('stats', message.data);
       break;
-
     case 'pong':
-      // Ping response received
       break;
-
-    default:
-      console.log('Unknown message event:', message.event);
   }
 }
 
@@ -264,45 +299,60 @@ function handleWebSocketMessage(message) {
  * Handle token capture from content scripts
  */
 function handleTokenCapture(data) {
-  console.log('Token captured:', data.platform);
-
   if (!isConnected) {
-    console.error('Cannot send token: WebSocket not connected');
-    notifyPopup('error', 'Not connected to USAMKO server');
+    console.error('Cannot send token: not connected');
+    notifyPopup('error', 'Not connected to server');
     return;
   }
 
-  // Send to backend via WebSocket
-  const success = sendWebSocketMessage('capture_token', {
-    platform: data.platform,
-    accountId: data.accountId,
-    accountName: data.accountName,
-    username: data.username,
-    accessToken: data.accessToken,
-    refreshToken: data.refreshToken,
-    expiresAt: data.expiresAt,
-    metadata: data.metadata,
-  });
+  websocket.send(JSON.stringify({
+    event: 'capture_token',
+    data: {
+      platform: data.platform,
+      accountId: data.accountId,
+      accountName: data.accountName,
+      username: data.username,
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+      expiresAt: data.expiresAt,
+      metadata: data.metadata,
+    },
+  }));
+}
 
-  if (success) {
-    console.log('Token sent to backend');
-  } else {
-    console.error('Failed to send token to backend');
-  }
+/**
+ * Export Google Maps leads to CSV
+ */
+function exportLeadsToCsv() {
+  if (googleMapsLeads.length === 0) return;
+
+  const headers = Object.keys(googleMapsLeads[0]);
+  const csv = [
+    headers.join(','),
+    ...googleMapsLeads.map(lead =>
+      headers.map(h => `"${(lead[h] || '').toString().replace(/"/g, '""')}"`).join(',')
+    )
+  ].join('\n');
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+
+  chrome.downloads.download({
+    url: url,
+    filename: `usamko-leads-${new Date().toISOString().split('T')[0]}.csv`,
+    saveAs: true,
+  });
 }
 
 /**
  * Notify popup of events
  */
 function notifyPopup(type, data) {
-  // Send message to popup if it's open
   chrome.runtime.sendMessage({
     type: 'BACKGROUND_EVENT',
     eventType: type,
     data: data,
-  }).catch(() => {
-    // Popup not open, ignore error
-  });
+  }).catch(() => {});
 }
 
 /**
@@ -311,7 +361,6 @@ function notifyPopup(type, data) {
 chrome.alarms.create('keep-alive', { periodInMinutes: 1 });
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'keep-alive') {
-    // Service worker will stay alive
     console.log('Keep-alive ping');
   }
 });

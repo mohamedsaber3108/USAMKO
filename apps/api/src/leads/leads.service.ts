@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateLeadDto, UpdateLeadDto, CollectLeadsDto, LeadSource } from './dto';
 import { LinkedInWorkerService } from './workers/linkedin-worker.service';
+import { LinkedInAuthenticatedService } from './workers/linkedin-authenticated.service';
 import { LinkoutWorkerService } from './workers/linkout-worker.service';
 import { MapsWorkerService } from './workers/maps-worker.service';
 import { EnrichmentService } from './enrichment.service';
@@ -13,6 +14,7 @@ export class LeadsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly linkedInWorker: LinkedInWorkerService,
+    private readonly linkedInAuth: LinkedInAuthenticatedService,
     private readonly linkoutWorker: LinkoutWorkerService,
     private readonly mapsWorker: MapsWorkerService,
     private readonly enrichment: EnrichmentService,
@@ -131,7 +133,7 @@ export class LeadsService {
 
     switch (collectDto.source) {
       case LeadSource.LINKEDIN:
-        rawLeads = await this.collectFromLinkedIn(collectDto);
+        rawLeads = await this.collectFromLinkedIn(tenantId, collectDto);
         break;
 
       case LeadSource.GOOGLE_MAPS:
@@ -167,17 +169,28 @@ export class LeadsService {
     };
   }
 
-  private async collectFromLinkedIn(params: CollectLeadsDto): Promise<any[]> {
+  private async collectFromLinkedIn(tenantId: string, params: CollectLeadsDto): Promise<any[]> {
+    // Get the first user for this tenant (for account lookup)
+    const tenantUser = await this.prisma.user.findFirst({
+      where: { tenantId },
+      select: { id: true },
+    });
+    const userId = tenantUser?.id || '';
+
     if (params.company) {
-      // Search people at a specific company
-      return await this.linkedInWorker.searchPeopleAtCompany({
+      // Try authenticated first, falls back to public internally
+      return await this.linkedInAuth.searchPeopleAtCompany({
+        tenantId,
+        userId,
         companyUrl: params.company,
         role: params.role,
         maxResults: params.maxResults || 100,
       });
     } else if (params.industry && params.location) {
-      // First discover companies, then search people
-      const companies = await this.linkedInWorker.discoverCompanies({
+      // Discover companies (authenticated with fallback to public)
+      const companies = await this.linkedInAuth.discoverCompanies({
+        tenantId,
+        userId,
         industry: params.industry,
         location: params.location,
         maxCompanies: 10,
@@ -185,7 +198,9 @@ export class LeadsService {
 
       const allPeople = [];
       for (const company of companies.slice(0, 5)) {
-        const people = await this.linkedInWorker.searchPeopleAtCompany({
+        const people = await this.linkedInAuth.searchPeopleAtCompany({
+          tenantId,
+          userId,
           companyUrl: company.url,
           role: params.role,
           maxResults: params.maxResults ? Math.floor(params.maxResults / 5) : 20,
