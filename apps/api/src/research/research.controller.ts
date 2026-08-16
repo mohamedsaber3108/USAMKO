@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Query, Param } from '@nestjs/common';
+import { Controller, Post, Get, Body, Query, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ResearchService } from './research.service';
 import { EmailFinderService } from './services/email-finder.service';
@@ -6,18 +6,10 @@ import { CompanyScraperService } from './services/company-scraper.service';
 import { LeadGeneratorService } from './services/lead-generator.service';
 import { DatasetService } from './services/dataset.service';
 import { WebScraperService } from './services/web-scraper.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-/**
- * Research Controller - 100% FREE Research API
- *
- * All endpoints are completely FREE and unlimited:
- * - No API keys required (optional keys only for enhanced features)
- * - No rate limits
- * - No usage caps
- * - Unlimited scraping
- * - Access to millions of free datasets
- */
 @ApiTags('Research')
+@UseGuards(JwtAuthGuard)
 @Controller('research')
 export class ResearchController {
   constructor(

@@ -12,7 +12,9 @@ import {
 } from '@nestjs/common';
 import { LeadsService } from './leads.service';
 import { CreateLeadDto, UpdateLeadDto, CollectLeadsDto } from './dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('leads')
 export class LeadsController {
   constructor(private readonly leadsService: LeadsService) {}

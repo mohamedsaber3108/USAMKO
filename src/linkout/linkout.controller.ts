@@ -9,8 +9,10 @@ import {
 } from '@nestjs/common';
 import { LinkoutService } from './linkout.service';
 
+import { JwtAuthGuard } from '../../apps/api/src/auth/guards/jwt-auth.guard';
+
+@UseGuards(JwtAuthGuard)
 @Controller('linkout')
-// @UseGuards(JwtAuthGuard) // Uncomment when auth is set up
 export class LinkoutController {
   constructor(private readonly linkoutService: LinkoutService) {}
 

@@ -14,10 +14,9 @@ import { PromptCacheService } from './prompt-cache.service';
 import { BudgetManagerService } from './budget-manager.service';
 import { TaskClassifierService } from './task-classifier.service';
 
-/**
- * AI Orchestration Controller
- * Provides REST API for AI model routing and cost optimization
- */
+import { JwtAuthGuard } from '../../apps/api/src/auth/guards/jwt-auth.guard';
+
+@UseGuards(JwtAuthGuard)
 @Controller('ai')
 export class AIOrchestrationController {
   private readonly logger = new Logger(AIOrchestrationController.name);

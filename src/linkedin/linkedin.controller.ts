@@ -11,12 +11,10 @@ import { LinkedInService } from './linkedin.service';
 import { LinkedInProfilesService } from './linkedin-profiles.service';
 import { LinkedInMessagesService } from './linkedin-messages.service';
 
-// Import your auth guards (adjust path as needed)
-// import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-// import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../../apps/api/src/auth/guards/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('linkedin')
-// @UseGuards(JwtAuthGuard)
 export class LinkedInController {
   constructor(
     private readonly linkedinService: LinkedInService,

@@ -6,13 +6,12 @@ import {
   Query,
   Param,
   Logger,
+  UseGuards,
 } from '@nestjs/common';
 import { DataOrchestrationService } from './data-orchestration.service';
+import { JwtAuthGuard } from '../../apps/api/src/auth/guards/jwt-auth.guard';
 
-/**
- * Data Orchestration Controller
- * Provides REST API for natural language data collection
- */
+@UseGuards(JwtAuthGuard)
 @Controller('data')
 export class DataOrchestrationController {
   private readonly logger = new Logger(DataOrchestrationController.name);

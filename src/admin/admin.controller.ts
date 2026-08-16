@@ -17,8 +17,10 @@ import { UsageTrackingService, ResourceType } from './usage-tracking.service';
 import { SessionManagementService } from './session-management.service';
 import { AuditService } from './audit.service';
 
+import { JwtAuthGuard } from '../../apps/api/src/auth/guards/jwt-auth.guard';
+
+@UseGuards(JwtAuthGuard)
 @Controller('admin')
-// @UseGuards(JwtAuthGuard, AdminGuard) // Uncomment when auth is set up
 export class AdminController {
   constructor(
     private readonly userManagement: UserManagementService,

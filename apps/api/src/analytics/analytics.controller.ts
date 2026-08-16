@@ -1,9 +1,11 @@
-import { Controller, Get, Query, Param, ParseUUIDPipe, Header, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Query, Param, ParseUUIDPipe, Header, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { AnalyticsService } from './analytics.service';
 import { OverviewStats, PlatformStat, CampaignStat, EngagementStat, GrowthStat, TopPost, ContentPerformance } from './analytics.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Analytics')
+@UseGuards(JwtAuthGuard)
 @Controller('analytics')
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
