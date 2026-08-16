@@ -32,6 +32,7 @@ import { LinkoutModule } from '../../../src/linkout/linkout.module';
 import { AdminModule } from '../../../src/admin/admin.module';
 import { AIOrchestrationModule } from '../../../src/ai-orchestration/ai-orchestration.module';
 import { DataOrchestrationModule } from './data-orchestration/data-orchestration.module';
+import { ScrapingAccountsModule } from './scraping-accounts/scraping-accounts.module';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { DataOrchestrationModule } from './data-orchestration/data-orchestration
     AdminModule, // Admin control center
     AIOrchestrationModule, // AI model routing & cost optimization
     DataOrchestrationModule, // Natural language data collection
+    ScrapingAccountsModule, // Secure platform credential management
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

@@ -104,9 +104,10 @@ model Tenant {
   teamActivityLogs TeamActivityLog[]
   mediaFiles       MediaFile[]
   notifications    Notification[]
-  credentialVaults CredentialVault[]
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
+  credentialVaults  CredentialVault[]
+  scrapingAccounts  ScrapingAccount[]
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
 }
 
 model PlatformAccount {
@@ -490,4 +491,27 @@ model AuditLog {
   @@index([userId])
   @@index([timestamp])
   @@index([entity, entityId])
+}
+
+// Scraping Account Model for Platform Credentials
+model ScrapingAccount {
+  id                    String   @id @default(uuid())
+  tenantId              String
+  tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId                String
+  platform              String // 'linkedin', 'google', 'facebook', 'instagram', 'twitter'
+  accountType           String // 'credentials', 'cookies', 'api_key', 'oauth'
+  accountName           String // Display name like "John's LinkedIn Account"
+  encryptedCredentials  String?  @db.Text // AES-256-GCM encrypted credentials/cookies
+  proxyConfig           String?  @db.Text // JSON: { host, port, username, password, type }
+  status                String   @default("active") // 'active', 'inactive', 'error'
+  isDefault             Boolean  @default(false)
+  lastVerified          DateTime?
+  metadata              Json?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([tenantId, userId])
+  @@index([tenantId, platform])
+  @@index([tenantId, userId, platform, isDefault])
 }

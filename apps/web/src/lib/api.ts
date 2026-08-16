@@ -608,6 +608,38 @@ class ApiClient {
   async deleteSchedule(id: string) { return this.request(`/schedules/${id}`, { method: 'DELETE' }); }
   async toggleSchedule(id: string) { return this.request(`/schedules/${id}/toggle`, { method: 'POST' }); }
 
+  // ─── Scraping Accounts ──────────────────────────────────
+  async getScrapingAccounts() { return this.request('/scraping-accounts'); }
+  async getScrapingAccountsByPlatform(platform: string) {
+    return this.request(`/scraping-accounts/platform/${platform}`);
+  }
+  async createScrapingAccount(data: {
+    platform: string;
+    accountType: string;
+    accountName: string;
+    credentials?: any;
+    cookies?: any;
+    apiKey?: string;
+    proxy?: any;
+  }) {
+    return this.request('/scraping-accounts', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async testScrapingAccount(accountId: string) {
+    return this.request(`/scraping-accounts/${accountId}/test`, { method: 'POST' });
+  }
+  async setDefaultScrapingAccount(accountId: string) {
+    return this.request(`/scraping-accounts/${accountId}/set-default`, { method: 'PATCH' });
+  }
+  async updateScrapingAccountStatus(accountId: string, status: string) {
+    return this.request(`/scraping-accounts/${accountId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
+  async deleteScrapingAccount(accountId: string) {
+    return this.request(`/scraping-accounts/${accountId}`, { method: 'DELETE' });
+  }
+
   // ─── Health ─────────────────────────────────────────────
   async healthCheck() { return this.request('/health'); }
   async healthDb() { return this.request('/health/db'); }
