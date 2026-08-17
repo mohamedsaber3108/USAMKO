@@ -133,36 +133,83 @@ export class ScrapingAccountsService {
     userId: string,
     platform: string,
   ): Promise<ScrapingAccount | null> {
-    const account = await this.prisma.scrapingAccount.findFirst({
+    // First check ScrapingAccount table
+    let account = await this.prisma.scrapingAccount.findFirst({
       where: { tenantId, userId, platform, status: 'active', isDefault: true },
     });
 
-    return account ? this.mapToScrapingAccount(account) : null;
+    if (account) {
+      return this.mapToScrapingAccount(account);
+    }
+
+    // Fallback: check PlatformAccount table (for accounts added via /platforms)
+    const platformAccount = await this.prisma.platformAccount.findFirst({
+      where: {
+        tenantId,
+        platform: platform.toUpperCase(),
+        status: 'CONNECTED',
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!platformAccount) {
+      return null;
+    }
+
+    // Convert PlatformAccount to ScrapingAccount format
+    return {
+      id: platformAccount.id,
+      tenantId: platformAccount.tenantId,
+      userId: platformAccount.userId || userId,
+      platform: platform as any,
+      accountType: platformAccount.cookies ? 'cookies' : 'oauth',
+      accountName: platformAccount.accountName || platformAccount.username || 'Unknown',
+      status: 'active',
+      isDefault: true,
+      metadata: platformAccount.metadata as any,
+      createdAt: platformAccount.createdAt,
+      updatedAt: platformAccount.updatedAt,
+    };
   }
 
   /**
    * Get decrypted credentials for an account
    */
   async getCredentials(accountId: string, tenantId: string): Promise<any> {
+    // Try ScrapingAccount first
     const account = await this.prisma.scrapingAccount.findFirst({
       where: { id: accountId, tenantId },
     });
 
-    if (!account) {
+    if (account) {
+      if (!account.encryptedCredentials) {
+        return null;
+      }
+
+      try {
+        const decrypted = this.encryption.decrypt(account.encryptedCredentials);
+        return JSON.parse(decrypted);
+      } catch (error) {
+        this.logger.error(`Failed to decrypt credentials: ${error.message}`);
+        return null;
+      }
+    }
+
+    // Fallback: try PlatformAccount
+    const platformAccount = await this.prisma.platformAccount.findFirst({
+      where: { id: accountId, tenantId },
+    });
+
+    if (!platformAccount) {
       throw new NotFoundException('Account not found');
     }
 
-    if (!account.encryptedCredentials) {
-      return null;
+    // Return cookies from PlatformAccount
+    if (platformAccount.cookies) {
+      return platformAccount.cookies;
     }
 
-    try {
-      const decrypted = this.encryption.decrypt(account.encryptedCredentials);
-      return JSON.parse(decrypted);
-    } catch (error) {
-      this.logger.error('Failed to decrypt credentials', error);
-      return null;
-    }
+    return null;
   }
 
   /**
