@@ -200,19 +200,24 @@ export class PlatformService {
     const account = await this.prisma.platformAccount.create({
       data: {
         id: `platform_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        tenantId,
-        userId: effectiveUserId,
-        platform: platform as any,
-        accountName,
-        accountId,
-        username: username || null,
+        username: username || accountName || 'unknown',
         displayName: displayName || null,
+        accountId: accountId || null,
+        accountName: accountName || null,
         profileUrl: profileUrl || null,
         accessToken: encryptedAccessToken,
         refreshToken: encryptedRefreshToken,
         expiresAt: expiresAt || null,
         cookies: cookies || null,
+        metadata: null,
         status: AccountStatus.CONNECTED as any,
+        platform: platform as any,
+        tenant: {
+          connect: { id: tenantId },
+        },
+        user: effectiveUserId ? {
+          connect: { id: effectiveUserId },
+        } : undefined,
       },
     });
 
