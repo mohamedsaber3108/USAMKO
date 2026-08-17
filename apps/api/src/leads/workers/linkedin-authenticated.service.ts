@@ -120,10 +120,17 @@ export class LinkedInAuthenticatedService {
       const searchQuery = encodeURIComponent(`${params.industry} ${params.location}`);
       await page.goto(
         `https://www.linkedin.com/search/results/companies/?keywords=${searchQuery}`,
-        { waitUntil: 'domcontentloaded', timeout: 30000 },
+        { waitUntil: 'networkidle', timeout: 30000 },
       );
 
-      await page.waitForTimeout(3000);
+      // Wait for search results to load (try multiple selectors)
+      try {
+        await page.waitForSelector('.reusable-search__result-container, .entity-result, .search-results-container', { timeout: 10000 });
+      } catch (e) {
+        this.logger.warn('Search results did not load within 10s');
+      }
+
+      await page.waitForTimeout(2000);
 
       // Debug: check if we're logged in
       const currentUrl = page.url();
@@ -135,11 +142,18 @@ export class LinkedInAuthenticatedService {
         return [];
       }
 
+      // Debug: Save HTML and screenshot for inspection
+      const html = await page.content();
+      const bodyText = await page.evaluate(() => document.body.innerText.substring(0, 500));
+      this.logger.log(`Page body preview: ${bodyText}`);
+
       // Debug: count elements
       const elementCount = await page.evaluate(() => ({
         entityResults: document.querySelectorAll('.entity-result').length,
         reusableSearchResults: document.querySelectorAll('.reusable-search__result-container').length,
         orgSearchResults: document.querySelectorAll('.org-search-results__list-item').length,
+        anyLi: document.querySelectorAll('li').length,
+        searchResults: document.querySelectorAll('[data-test-search-result]').length,
       }));
       this.logger.log(`Found elements: ${JSON.stringify(elementCount)}`);
 
