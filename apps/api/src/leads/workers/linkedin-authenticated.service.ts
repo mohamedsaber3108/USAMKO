@@ -125,17 +125,38 @@ export class LinkedInAuthenticatedService {
 
       await page.waitForTimeout(3000);
 
-      // Extract companies
+      // Debug: check if we're logged in
+      const currentUrl = page.url();
+      this.logger.log(`Current URL after navigation: ${currentUrl}`);
+
+      if (currentUrl.includes('/login') || currentUrl.includes('/checkpoint')) {
+        this.logger.warn('LinkedIn redirected to login - cookies may be invalid');
+        await browser.close();
+        return [];
+      }
+
+      // Debug: count elements
+      const elementCount = await page.evaluate(() => ({
+        entityResults: document.querySelectorAll('.entity-result').length,
+        reusableSearchResults: document.querySelectorAll('.reusable-search__result-container').length,
+        orgSearchResults: document.querySelectorAll('.org-search-results__list-item').length,
+      }));
+      this.logger.log(`Found elements: ${JSON.stringify(elementCount)}`);
+
+      // Extract companies (try multiple selectors)
       const companies = await page.evaluate((max: number) => {
         const results: any[] = [];
-        const items = document.querySelectorAll('.entity-result');
+
+        // Try modern LinkedIn selectors
+        let items = document.querySelectorAll('.reusable-search__result-container, .entity-result, .org-search-results__list-item');
 
         items.forEach((item) => {
           if (results.length >= max) return;
 
-          const nameEl = item.querySelector('.entity-result__title-text a');
-          const locationEl = item.querySelector('.entity-result__secondary-subtitle');
-          const descEl = item.querySelector('.entity-result__summary');
+          // Try multiple selector patterns
+          const nameEl = item.querySelector('.entity-result__title-text a, .app-aware-link .org-people-profile-card__profile-title, [data-control-name="search_result_company_title"]');
+          const locationEl = item.querySelector('.entity-result__secondary-subtitle, .org-people-profile-card__location');
+          const descEl = item.querySelector('.entity-result__summary, .org-people-profile-card__subtitle');
 
           if (nameEl) {
             results.push({
