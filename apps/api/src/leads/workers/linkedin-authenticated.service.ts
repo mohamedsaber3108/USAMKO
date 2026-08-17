@@ -142,20 +142,43 @@ export class LinkedInAuthenticatedService {
         return [];
       }
 
-      // Debug: Save HTML and screenshot for inspection
-      const html = await page.content();
-      const bodyText = await page.evaluate(() => document.body.innerText.substring(0, 500));
-      this.logger.log(`Page body preview: ${bodyText}`);
+      // Debug: Find actual element structure
+      const actualStructure = await page.evaluate(() => {
+        // Find all list items that might contain companies
+        const mainContent = document.querySelector('main') || document.body;
+        const allLists = mainContent.querySelectorAll('ul');
 
-      // Debug: count elements
-      const elementCount = await page.evaluate(() => ({
-        entityResults: document.querySelectorAll('.entity-result').length,
-        reusableSearchResults: document.querySelectorAll('.reusable-search__result-container').length,
-        orgSearchResults: document.querySelectorAll('.org-search-results__list-item').length,
-        anyLi: document.querySelectorAll('li').length,
-        searchResults: document.querySelectorAll('[data-test-search-result]').length,
-      }));
-      this.logger.log(`Found elements: ${JSON.stringify(elementCount)}`);
+        const structure: any = {
+          totalUls: allLists.length,
+          listsWithMultipleItems: 0,
+          sampleClasses: [],
+        };
+
+        allLists.forEach((ul, idx) => {
+          const items = ul.querySelectorAll('li');
+          if (items.length > 2 && items.length < 50) {
+            structure.listsWithMultipleItems++;
+
+            // Get first item's classes
+            const firstItem = items[0];
+            const classList = Array.from(firstItem.classList);
+
+            // Try to find link with company name
+            const link = firstItem.querySelector('a[href*="/company/"]');
+
+            structure.sampleClasses.push({
+              ulIndex: idx,
+              itemCount: items.length,
+              liClasses: classList.slice(0, 3),
+              hasCompanyLink: !!link,
+              linkHref: link?.getAttribute('href')?.substring(0, 50),
+            });
+          }
+        });
+
+        return structure;
+      });
+      this.logger.log(`LinkedIn DOM structure: ${JSON.stringify(actualStructure, null, 2)}`);
 
       // Extract companies (try multiple selectors)
       const companies = await page.evaluate((max: number) => {
