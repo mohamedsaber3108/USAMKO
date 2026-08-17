@@ -33,7 +33,6 @@ export class PlatformController {
    * Get all platform accounts for current tenant
    */
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.USER, UserRole.VIEWER)
   async getAllAccounts(@Auth() user: any) {
     return this.platformService.getAllAccounts(user.tenantId);
   }
@@ -61,7 +60,6 @@ export class PlatformController {
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @Roles(UserRole.ADMIN, UserRole.USER)
   async createAccount(
     @Body()
     dto: {
