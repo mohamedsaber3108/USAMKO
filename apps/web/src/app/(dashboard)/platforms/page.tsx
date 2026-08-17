@@ -93,7 +93,7 @@ export default function PlatformsPage() {
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">Active</p>
-          <p className="text-2xl font-bold text-green-600">{platforms.filter(p => p.isActive).length}</p>
+          <p className="text-2xl font-bold text-green-600">{platforms.filter(p => p.status === 'CONNECTED').length}</p>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">Platforms</p>
@@ -113,9 +113,9 @@ export default function PlatformsPage() {
                 <p className="text-sm text-gray-500">{platform.accountName || platform.username || 'Unknown'}</p>
               </div>
               <span className={`px-2 py-1 text-xs rounded ${
-                platform.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                platform.status === 'CONNECTED' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
               }`}>
-                {platform.isActive ? 'Active' : 'Inactive'}
+                {platform.status === 'CONNECTED' ? 'Connected' : platform.status || 'Inactive'}
               </span>
             </div>
 
